@@ -1,0 +1,32 @@
+Etablissement: {
+	id: id!
+	nom: string!
+	description: string
+	horaires: [Horaires!] # max 7 éléments, pas 2 fois le même jour
+	adresse: Adresse!
+	bieres: [biere!]!
+	image: img
+}
+
+Horaire: {
+	jour: enum! #LUNDI, MARDI, MERCREDI, ...., DIMANCHE
+	hOuvFerm: [(heure ouv., heure ferm.)] # min 1 élément, max 3 éléments
+}
+
+Biere: {
+	nom: string!
+	marque: string!
+	prix: number!
+	degreAlcool: number!
+	image: img
+}
+
+Adresse: {
+	no: string!
+	chemin: string!
+	ville: string!
+	noPostal: number!
+	pays: string!
+	lng: number!
+	lat: number!
+}
