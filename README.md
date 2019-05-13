@@ -1,23 +1,26 @@
-# Projet Scala:
+- # Projet Scala - BeerPass:
 
-Membres du groupe: Antoine Rochat et Benoît Schopfer
+  Membres du groupe: Antoine Rochat et Benoît Schopfer
 
+  
 
+  ## Description du projet:
 
-## Description du projet:
+  Le Bier Pass vous permet d'obtenir une bière gratuite dans tous les établissements partenaires (+100 établissements) sur une année civile. Le prix du pass serait de 49 CHF.
 
-Nous souhaitons créer un petit site internet permettant hébergeant des documents pdf, tels que les très nombreux pdf que nous recevons dans le cadre de nos études à la HEIG. Le texte des documents téléchargés sur notre site sera parsé et indexé de sorte à ce que l'utilisateur puisse effectuer des recherches basées sur le contenu de ces documents.
+  Une fois le Bier Pass commandé, les utilisateurs pourront consulter les bons restants sur l'application mobile dédiée. Ils pourront profiter de leurs offres grâce à un QR Code dans les différents établissements partenaires.
 
-Lors de l'ajout d'un document, l'utilisateur pourra entrer des tags qui seront enregistrés comme métadonnées dans une base de données. Ces tags permettront de filtrer les documents selon un ou plusieurs tags (par cours, par professeur, …).
+  Ce projet permettrait aux utilisateurs de découvrir de nouveaux établissements (bars ou brasseries) dans leurs régions et ceci à un prix attractif.
 
-L'utilisateur pourra également parcourir l'arborescence de fichiers stockés et ouvrir un document sélectionné.
+  L'attrait pour les établissements est double : Se faire connaître par de nouveaux potientiels clients et ainsi que l'interêt financier direct (il a été montré que les clients consommaient dvanatage ou passaient commande dans les différents établissements où ils ont fait valoir un bon).
 
-## Technologies utilisées:
+  ## Technologies utilisées:
 
-Pour ce projet, nous utiliserons:
+  Pour ce projet, nous utiliserons:
 
-- Scala pour écrire le Backend
-- Slick pour écrire la base de données
-- Lucène pour gérer l'indexation
-  - Si le temps nous le permet, nous remplacerons Lucène par notre propre code écrit en Spark.
-- Pour le Frontend, nous utiliserons un framework tel que ReactJs ou VueJs.
+  - Scala pour écrire le Backend.
+  - Slick pour écrire la base de données (utilisateurs, établissements, bons restants/utilisés par les utilisateurs dans tel établissement).
+  - Pour le Frontend Web, nous utiliserons un framework tel que ReactJs ou VueJs qui permettra simplement de commander un Bier Pass ainsi que de voir les établissements partenaires. (A faire si le temps)
+  - Nous auront aussi une application mobile écrite en React Native qui permettra :
+    - Pour les utilisateurs : de consulter les bons restants et générer un QR Code pour avoir une bière dans un bar particulier.
+    - Pour les établissements : de scanner les QR Code des utilisateurs afin de valider leurs commandes.
