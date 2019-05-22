@@ -6,27 +6,27 @@ import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import scala.concurrent.ExecutionContext
 import slick.jdbc.JdbcProfile
 
-trait OfferComponent extends CompanyComponent with ClientComponent with BeerComponent {
+trait OfferComponent extends CompanyComponent with UserComponent with BeerComponent {
   self: HasDatabaseConfigProvider[JdbcProfile] =>
 
   import profile.api._
 
   // This class convert the database's offers table in a object-oriented entity: the Offer model.
-  class OfferTable(tag: Tag) extends Table[Offer](tag, "BEER") {
+  class OfferTable(tag: Tag) extends Table[Offer](tag, "OFFER") {
     def companyId = column[Long]("COMPANY_ID", O.PrimaryKey) // Primary key
 
-    def clientId = column[Long]("CLIENT_ID", O.PrimaryKey) // Primary key
+    def userId = column[Long]("CLIENT_ID", O.PrimaryKey) // Primary key
 
     def beerId = column[Option[Long]]("BEER_ID")
 
     def company = foreignKey("COMPANY", companyId, companies)(x => x.id)
 
-    def client = foreignKey("ADDRESS", clientId, clients)(x => x.id)
+    def user = foreignKey("ADDRESS", userId, users)(x => x.id)
 
     def beer = foreignKey("ADDRESS", beerId, beers)(x => x.id)
 
     // Map the attributes with the model; the ID is optional.
-    def * = (companyId, clientId, beerId) <> (Offer.tupled, Offer.unapply)
+    def * = (companyId, userId, beerId) <> (Offer.tupled, Offer.unapply)
   }
 
   // Get the object-oriented list of courses directly from the query table.
@@ -43,7 +43,7 @@ class OfferDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
 
   /*
   /** Retrieve a offer from the id. */
-  def findById(companyId: Long, clientId: Long): Future[Option[Offer]] = db.run(offers.filter(_.companyId === companyId && _.clientId === clientId).result.headOption)
+  def findById(companyId: Long, userId: Long): Future[Option[Offer]] = db.run(offers.filter(_.companyId === companyId && _.userId === userId).result.headOption)
 
   /** Insert a new course, then return it. */
   def insert(offer: Offer): Future[Offer] = db.run(offers returning offers.map(_.id) into ((offer, id) => offer.copy(Some(id))) += offer)

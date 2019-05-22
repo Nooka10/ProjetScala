@@ -10,7 +10,7 @@ GET     /                           controllers.HomeController.index
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
 
 # REST API endpoints
-POST    /clients                    controllers.ClientController.createClient
-GET     /clients/:id                controllers.ClientController.getClient(id: Long)
-PUT     /clients/:id                controllers.ClientController.updateClient(id: Long)
-DELETE  /clients/:id                controllers.ClientController.deleteClient(id: Long)
+POST    /users                    controllers.UserController.createUser
+GET     /users/:id                controllers.UserController.getUser(id: Long)
+PUT     /users/:id                controllers.UserController.updateUser(id: Long)
+DELETE  /users/:id                controllers.UserController.deleteUser(id: Long)

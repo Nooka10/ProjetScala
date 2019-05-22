@@ -14,6 +14,10 @@ libraryDependencies ++= Seq( jdbc , ehcache , ws , specs2 % Test , guice )
 
 unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"target/web/public/test" )
 
-libraryDependencies += "com.typesafe.play" %% "play-slick" % "3.0.0" // Slick
+libraryDependencies += "com.typesafe.play" %% "play-slick" % "4.0.0" // Slick
 
 libraryDependencies += "mysql" % "mysql-connector-java" % "5.1.24" // Connecteur MySQL
+
+libraryDependencies += "com.zaxxer" % "HikariCP" % "3.3.1"
+
+libraryDependencies += "com.github.t3hnar" %% "scala-bcrypt" % "4.0"
