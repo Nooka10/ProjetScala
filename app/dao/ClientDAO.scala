@@ -27,6 +27,8 @@ trait ClientComponent {
     def * = (id.?, firstname, lastname, email, password) <> (Client.tupled, Client.unapply)
   }
 
+  // Get the object-oriented list of courses directly from the query table.
+  lazy val clients = TableQuery[ClientTable]
 }
 
 // This class contains the object-oriented list of client and offers methods to query the data.
@@ -38,9 +40,6 @@ class ClientDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider
   extends ClientComponent with HasDatabaseConfigProvider[JdbcProfile] {
 
   import profile.api._
-
-  // Get the object-oriented list of courses directly from the query table.
-  val clients = TableQuery[ClientTable]
 
   /** Retrieve a client from the id. */
   def findById(id: Long): Future[Option[Client]] = db.run(clients.filter(_.id === id).result.headOption)

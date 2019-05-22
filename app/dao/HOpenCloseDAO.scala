@@ -26,6 +26,8 @@ trait HOpenCloseComponent {
     def * = (id.?, hOpen, hClose) <> (HOpenClose.tupled, HOpenClose.unapply)
   }
 
+  // Get the object-oriented list of courses directly from the query table.
+  lazy val hOpenCloses = TableQuery[HOpenCloseTable]
 }
 
 // This class contains the object-oriented list of hOpenClose and offers methods to query the data.
@@ -37,9 +39,6 @@ class HOpenCloseDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProv
   extends HOpenCloseComponent with HasDatabaseConfigProvider[JdbcProfile] {
 
   import profile.api._
-
-  // Get the object-oriented list of courses directly from the query table.
-  val hOpenCloses = TableQuery[HOpenCloseTable]
 
   /** Retrieve a hOpenClose from the id. */
   def findById(id: Long): Future[Option[HOpenClose]] = db.run(hOpenCloses.filter(_.id === id).result.headOption)

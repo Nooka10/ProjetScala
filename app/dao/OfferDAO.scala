@@ -3,15 +3,13 @@ package dao
 import javax.inject.{Inject, Singleton}
 import models.Offer
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import slick.jdbc.JdbcProfile
 
-trait OfferComponent {
+trait OfferComponent extends CompanyComponent with ClientComponent with BeerComponent {
   self: HasDatabaseConfigProvider[JdbcProfile] =>
 
   import profile.api._
-
-  // val OfferTable: OfferTable
 
   // This class convert the database's offers table in a object-oriented entity: the Offer model.
   class OfferTable(tag: Tag) extends Table[Offer](tag, "BEER") {
@@ -21,14 +19,18 @@ trait OfferComponent {
 
     def beerId = column[Option[Long]]("BEER_ID")
 
-    // lazy val offer = TableQuery[OfferTable]
+    def company = foreignKey("COMPANY", companyId, companies)(x => x.id)
 
-    // def offer = foreignKey("ADDRESS", offerId, offeres)(x => x.id)
+    def client = foreignKey("ADDRESS", clientId, clients)(x => x.id)
+
+    def beer = foreignKey("ADDRESS", beerId, beers)(x => x.id)
 
     // Map the attributes with the model; the ID is optional.
     def * = (companyId, clientId, beerId) <> (Offer.tupled, Offer.unapply)
   }
 
+  // Get the object-oriented list of courses directly from the query table.
+  lazy val offers = TableQuery[OfferTable]
 }
 
 // This class contains the object-oriented list of offer and offers methods to query the data.
@@ -38,11 +40,6 @@ trait OfferComponent {
 @Singleton
 class OfferDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)(implicit executionContext: ExecutionContext)
   extends OfferComponent with HasDatabaseConfigProvider[JdbcProfile] {
-
-  import profile.api._
-
-  // Get the object-oriented list of courses directly from the query table.
-  val offers = TableQuery[OfferTable]
 
   /*
   /** Retrieve a offer from the id. */

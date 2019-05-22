@@ -11,8 +11,6 @@ trait BeerComponent {
 
   import profile.api._
 
-  // val BeerTable: BeerTable
-
   // This class convert the database's beers table in a object-oriented entity: the Beer model.
   class BeerTable(tag: Tag) extends Table[Beer](tag, "BEER") {
     def id = column[Long]("ID", O.PrimaryKey, O.AutoInc) // Primary key, auto-incremented
@@ -25,14 +23,12 @@ trait BeerComponent {
 
     def image = column[Option[String]]("IMAGE")
 
-    // lazy val beeres = TableQuery[BeerTable]
-
-    // def beer = foreignKey("ADDRESS", beerId, beeres)(x => x.id)
-
     // Map the attributes with the model; the ID is optional.
     def * = (id.?, name, brand, degreeAlcohol, image) <> (Beer.tupled, Beer.unapply)
   }
 
+  // Get the object-oriented list of courses directly from the query table.
+  lazy val beers = TableQuery[BeerTable]
 }
 
 // This class contains the object-oriented list of beer and offers methods to query the data.
@@ -44,9 +40,6 @@ class BeerDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)(
   extends BeerComponent with HasDatabaseConfigProvider[JdbcProfile] {
 
   import profile.api._
-
-  // Get the object-oriented list of courses directly from the query table.
-  val beers = TableQuery[BeerTable]
 
   /** Retrieve a beer from the id. */
   def findById(id: Long): Future[Option[Beer]] = db.run(beers.filter(_.id === id).result.headOption)

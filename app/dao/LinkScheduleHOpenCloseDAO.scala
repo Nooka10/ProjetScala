@@ -5,7 +5,7 @@ import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import scala.concurrent.{ExecutionContext, Future}
 import slick.jdbc.JdbcProfile
 
-trait LinkScheduleHOpenCloseComponent {
+trait LinkScheduleHOpenCloseComponent extends ScheduleComponent with HOpenCloseComponent {
   self: HasDatabaseConfigProvider[JdbcProfile] =>
 
   import models.Link_Schedule_HOpenClose
@@ -18,14 +18,20 @@ trait LinkScheduleHOpenCloseComponent {
 
     def id = column[Long]("ID", O.PrimaryKey, O.AutoInc) // Primary key, auto-incremented
 
-    def idSchedule = column[Long]("ID_SCHEDULE")
+    def scheduleId = column[Long]("SCHEDULE_ID")
 
-    def idHOpenClose = column[Long]("ID_H_OPEN_CLOSE")
+    def hOpenCloseId = column[Long]("H_OPEN_CLOSE_ID")
+
+    def schedule = foreignKey("SCHEDULE", scheduleId, schedules)(x => x.id)
+
+    def hOpenClose = foreignKey("H_OPENCLOSE", hOpenCloseId, hOpenCloses)(x => x.id)
 
     // Map the attributes with the model; the ID is optional.
-    def * = (id.?, idSchedule, idHOpenClose) <> (Link_Schedule_HOpenClose.tupled, Link_Schedule_HOpenClose.unapply)
+    def * = (id.?, scheduleId, hOpenCloseId) <> (Link_Schedule_HOpenClose.tupled, Link_Schedule_HOpenClose.unapply)
   }
 
+  // Get the object-oriented list of courses directly from the query table.
+  lazy val linkScheduleHOpenCloses = TableQuery[LinkScheduleHOpenCloseTable]
 }
 
 // This class contains the object-oriented list of linkScheduleHOpenClose and offers methods to query the data.
@@ -38,9 +44,6 @@ class LinkScheduleHOpenCloseDAO @Inject()(protected val dbConfigProvider: Databa
 
   import models.Link_Schedule_HOpenClose
   import profile.api._
-
-  // Get the object-oriented list of courses directly from the query table.
-  val linkScheduleHOpenCloses = TableQuery[LinkScheduleHOpenCloseTable]
 
   /** Retrieve a linkScheduleHOpenClose from the id. */
   def findById(id: Long): Future[Option[Link_Schedule_HOpenClose]] = db.run(linkScheduleHOpenCloses.filter(_.id === id).result.headOption)

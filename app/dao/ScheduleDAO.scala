@@ -22,6 +22,8 @@ trait ScheduleComponent {
     def * = (id.?, day) <> (Schedule.tupled, Schedule.unapply)
   }
 
+  // Get the object-oriented list of courses directly from the query table.
+  lazy val schedules = TableQuery[ScheduleTable]
 }
 
 // This class contains the object-oriented list of schedule and offers methods to query the data.
@@ -33,9 +35,6 @@ class ScheduleDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
   extends ScheduleComponent with HasDatabaseConfigProvider[JdbcProfile] {
 
   import profile.api._
-
-  // Get the object-oriented list of courses directly from the query table.
-  val schedules = TableQuery[ScheduleTable]
 
   /** Retrieve a schedule from the id. */
   def findById(id: Long): Future[Option[Schedule]] = db.run(schedules.filter(_.id === id).result.headOption)

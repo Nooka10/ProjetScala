@@ -6,7 +6,7 @@ import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import scala.concurrent.{ExecutionContext, Future}
 import slick.jdbc.JdbcProfile
 
-trait BarmenComponent {
+trait BarmenComponent extends CompanyComponent {
   self: HasDatabaseConfigProvider[JdbcProfile] =>
 
   import profile.api._
@@ -27,14 +27,14 @@ trait BarmenComponent {
 
     def companyId = column[Long]("COMPANY_ID")
 
-    // val companys = TableQuery[CompanyTable]
-
-    // def companyFk = foreignKey("COMPANY_ID_FK", companyId, companys)(_.id, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    def company = foreignKey("COMPANY", companyId, companies)(_.id, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
 
     // Map the attributes with the model; the ID is optional.
     def * = (id.?, firstname, lastname, email, password, companyId) <> (Barmen.tupled, Barmen.unapply)
   }
 
+  // Get the object-oriented list of courses directly from the query table.
+  lazy val barmens = TableQuery[BarmenTable]
 }
 
 // This class contains the object-oriented list of barmen and offers methods to query the data.
@@ -46,9 +46,6 @@ class BarmenDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider
   extends BarmenComponent with HasDatabaseConfigProvider[JdbcProfile] {
 
   import profile.api._
-
-  // Get the object-oriented list of courses directly from the query table.
-  val barmens = TableQuery[BarmenTable]
 
   /** Retrieve a barmen from the id. */
   def findById(id: Long): Future[Option[Barmen]] = db.run(barmens.filter(_.id === id).result.headOption)

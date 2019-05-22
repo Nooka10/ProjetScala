@@ -6,12 +6,10 @@ import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import scala.concurrent.{ExecutionContext, Future}
 import slick.jdbc.JdbcProfile
 
-trait CompanyComponent {
+trait CompanyComponent extends AddressComponent with ScheduleComponent {
   self: HasDatabaseConfigProvider[JdbcProfile] =>
 
   import profile.api._
-
-  // val CompanyTable: CompanyTable
 
   // This class convert the database's companys table in a object-oriented entity: the Company model.
   class CompanyTable(tag: Tag) extends Table[Company](tag, "COMPANY") {
@@ -27,14 +25,16 @@ trait CompanyComponent {
 
     def image = column[Option[String]]("IMAGE")
 
-    // lazy val addresses = TableQuery[AddressTable]
+    def schedule= foreignKey("SCHEDULE", scheduleId, schedules)(x => x.id)
 
-    // def address = foreignKey("ADDRESS", addressId, addresses)(x => x.id)
+    def address = foreignKey("ADDRESS", addressId, addresses)(x => x.id)
 
     // Map the attributes with the model; the ID is optional.
     def * = (id.?, name, description, scheduleId, addressId, image) <> (Company.tupled, Company.unapply)
   }
 
+  // Get the object-oriented list of courses directly from the query table.
+  lazy val companies = TableQuery[CompanyTable]
 }
 
 // This class contains the object-oriented list of company and offers methods to query the data.
@@ -47,20 +47,17 @@ class CompanyDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvide
 
   import profile.api._
 
-  // Get the object-oriented list of courses directly from the query table.
-  val companys = TableQuery[CompanyTable]
-
   /** Retrieve a company from the id. */
-  def findById(id: Long): Future[Option[Company]] = db.run(companys.filter(_.id === id).result.headOption)
+  def findById(id: Long): Future[Option[Company]] = db.run(companies.filter(_.id === id).result.headOption)
 
   /** Insert a new course, then return it. */
-  def insert(company: Company): Future[Company] = db.run(companys returning companys.map(_.id) into ((company, id) => company.copy(Some(id))) += company)
+  def insert(company: Company): Future[Company] = db.run(companies returning companies.map(_.id) into ((company, id) => company.copy(Some(id))) += company)
 
   /** Update a company, then return an integer that indicates if the company was found (1) or not (0). */
-  def update(id: Long, company: Company): Future[Int] = db.run(companys.filter(_.id === id).update(company.copy(Some(id))))
+  def update(id: Long, company: Company): Future[Int] = db.run(companies.filter(_.id === id).update(company.copy(Some(id))))
 
   /** Delete a company, then return an integer that indicates if the company was found (1) or not (0) */
-  def delete(id: Long): Future[Int] = db.run(companys.filter(_.id === id).delete)
+  def delete(id: Long): Future[Int] = db.run(companies.filter(_.id === id).delete)
 
   // TODO: ajouter une méthode pour modifier l'horaire, l'adresse, les bières et l'image
 }

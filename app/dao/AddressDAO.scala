@@ -10,10 +10,8 @@ trait AddressComponent {
   self: HasDatabaseConfigProvider[JdbcProfile] =>
 
   import profile.api._
-
-  // val AddressTable: AddressTable
-
-  // This class convert the database's addresss table in a object-oriented entity: the Address model.
+  
+  // This class convert the database's addresses table in a object-oriented entity: the Address model.
   class AddressTable(tag: Tag) extends Table[Address](tag, "ADDRESS") {
     def id = column[Long]("ID", O.PrimaryKey, O.AutoInc) // Primary key, auto-incremented
 
@@ -30,15 +28,13 @@ trait AddressComponent {
     def lng = column[Double]("LNG")
 
     def lat = column[Double]("LAT")
-
-    // lazy val addresses = TableQuery[AddressTable]
-
-    // def address = foreignKey("ADDRESS", addressId, addresses)(x => x.id)
-
+    
     // Map the attributes with the model; the ID is optional.
     def * = (id.?, no, road, city, postalCode, country, lng, lat) <> (Address.tupled, Address.unapply)
   }
-
+  
+  // Get the object-oriented list of courses directly from the query table.
+  lazy val addresses = TableQuery[AddressTable]
 }
 
 // This class contains the object-oriented list of address and offers methods to query the data.
@@ -51,20 +47,17 @@ class AddressDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvide
 
   import profile.api._
 
-  // Get the object-oriented list of courses directly from the query table.
-  val addresss = TableQuery[AddressTable]
-
   /** Retrieve a address from the id. */
-  def findById(id: Long): Future[Option[Address]] = db.run(addresss.filter(_.id === id).result.headOption)
+  def findById(id: Long): Future[Option[Address]] = db.run(addresses.filter(_.id === id).result.headOption)
 
   /** Insert a new course, then return it. */
-  def insert(address: Address): Future[Address] = db.run(addresss returning addresss.map(_.id) into ((address, id) => address.copy(Some(id))) += address)
+  def insert(address: Address): Future[Address] = db.run(addresses returning addresses.map(_.id) into ((address, id) => address.copy(Some(id))) += address)
 
   /** Update a address, then return an integer that indicates if the address was found (1) or not (0). */
-  def update(id: Long, address: Address): Future[Int] = db.run(addresss.filter(_.id === id).update(address.copy(Some(id))))
+  def update(id: Long, address: Address): Future[Int] = db.run(addresses.filter(_.id === id).update(address.copy(Some(id))))
 
   /** Delete a address, then return an integer that indicates if the address was found (1) or not (0) */
-  def delete(id: Long): Future[Int] = db.run(addresss.filter(_.id === id).delete)
+  def delete(id: Long): Future[Int] = db.run(addresses.filter(_.id === id).delete)
 
   // TODO: ajouter une méthode pour modifier l'horaire, l'adresse, les bières et l'image
 }
