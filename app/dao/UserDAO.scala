@@ -66,10 +66,13 @@ class UserDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)(
   /** Retrieve a user from the id. */
   def findById(id: Long): Future[Option[User]] = db.run(users.filter(_.id === id).result.headOption)
 
+  /** Retrieve a user from the email. */
+  def findByEmail(email: String): Future[Option[User]] = db.run(users.filter(_.email === email).result.headOption)
+
   /** Retrieve a user from the id. */
   def isEmailAvailable(email: String): Future[Boolean] = db.run(users.filter(_.email === email).exists.result)
 
-  /** Insert a new course, then return it. */
+  /** Insert a new user, then return it. */
   def insert(user: User): Future[User] = db.run(users returning users.map(_.id) into ((user, id) => user.copy(Some(id))) += user)
 
   /** Update a user, then return an integer that indicates if the user was found (1) or not (0). */

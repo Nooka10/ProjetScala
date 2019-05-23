@@ -21,3 +21,7 @@ libraryDependencies += "mysql" % "mysql-connector-java" % "5.1.24" // Connecteur
 libraryDependencies += "com.zaxxer" % "HikariCP" % "3.3.1"
 
 libraryDependencies += "com.github.t3hnar" %% "scala-bcrypt" % "4.0"
+
+libraryDependencies ++= Seq(
+  "com.pauldijou" %% "jwt-play-json" % "2.1.0"
+)

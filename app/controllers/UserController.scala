@@ -9,10 +9,13 @@ import play.api.libs.json.Reads._
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents}
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 @Singleton
-class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO) extends AbstractController(cc) {
+class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO, tokenController: TokenController) extends AbstractController(cc) {
+
+  import models.UserLogin
 
   implicit val userToJson: Writes[User] = (
     (JsPath \ "id").write[Option[Long]] and
@@ -34,6 +37,11 @@ class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO) exte
       (JsPath \ "companyId").readNullable[Long]
     ) (User.apply _)
 
+  implicit val jsonToLogin: Reads[UserLogin] = (
+    (JsPath \ "email").read[String](minLength[String](3) keepAnd maxLength[String](30)) and
+      (JsPath \ "password").read[String](minLength[String](6))
+    ) (UserLogin.apply _)
+
   def validateJson[A: Reads] = parse.json.validate(
     _.validate[A].asEither.left.map(e => BadRequest(JsError.toJson(e)))
   )
@@ -50,20 +58,54 @@ class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO) exte
       ))
     } else {
       val password: String = request.body.password.bcrypt(10)
+      // FIXME: Est-il possible de réassigner juste une valeur de la request? (modifier juste le champ password sans devoir recréer tout un User...)
       val user: User = User(null, request.body.firstname, request.body.lastname, request.body.email, password, request.body.userType, request.body.companyId)
 
       val createdUser: Future[User] = usersDAO.insert(user)
 
-      createdUser.map(c =>
+      createdUser.map(newUser => {
         Ok(
           Json.obj(
             "status" -> "OK",
-            "id" -> c.id,
-            "message" -> ("User '" + c.firstname + " " + c.lastname + "' saved."),
-            "user infos" -> Json.toJson(c)
+            "id" -> newUser.id,
+            "message" -> ("User '" + newUser.firstname + " " + newUser.lastname + "' saved."),
+            "user infos" -> Json.toJson(newUser),
+            "token" -> tokenController.createConnectionToken(newUser)
           )
         )
-      )
+      })
+    }
+  }
+
+  def login = Action.async(validateJson[UserLogin]) { request =>
+    val user: UserLogin = request.body
+    val userInDBFuture: Option[User] = Await.result(usersDAO.findByEmail(user.email), Duration.Inf)
+    if (userInDBFuture.isEmpty) {
+      Future(
+        NotFound(Json.obj(
+          "status" -> "Not Found",
+          "message" -> ("User with email '" + user.email + "' not found.")
+        )))
+    } else {
+      val userInDB: User = userInDBFuture.get
+
+      if (user.password.isBcryptedSafe(userInDB.password).get) { // passwords match
+        Future(
+          Ok(
+            Json.obj(
+              "status" -> "OK",
+              "id" -> userInDB.id,
+              "message" -> "You are now logged in.",
+              "user infos" -> Json.toJson(userInDB),
+              "token" -> tokenController.createConnectionToken(userInDB)
+            )))
+      } else { // passwords doesn't match
+        Future(
+          Unauthorized(Json.obj(
+            "status" -> "Unauthorized",
+            "message" -> "The received password is not correct."
+          )))
+      }
     }
   }
 
@@ -81,9 +123,6 @@ class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO) exte
   }
 
   def updateUser(userId: Long) = Action.async(validateJson[User]) { request =>
-    import scala.concurrent.Await
-    import scala.concurrent.duration.Duration
-
     val userInDBFuture: Option[User] = Await.result(usersDAO.findById(userId), Duration.Inf)
     if (userInDBFuture.isEmpty) {
       Future(

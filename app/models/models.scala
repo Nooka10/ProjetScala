@@ -17,3 +17,5 @@ case class Schedule(id: Option[Long], day: String) // day: DayEnum
 case class User(id: Option[Long], firstname: String, lastname: String, email: String, password: String, userType: String, companyId: Option[Long])
 
 // case class UserType(userType: String)
+
+case class UserLogin(email: String, password: String)
