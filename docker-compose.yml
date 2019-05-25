@@ -1,0 +1,48 @@
+version: '3.1'
+
+services:
+  mysql:
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: beerPassRoot
+      MYSQL_USER: beerPass
+      MYSQL_PASSWORD: beerPass
+      MYSQL_DATABASE: beerPass
+    networks:
+      - mysql_network
+    labels:
+      - "traefik.enable=false"
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: beerPassRoot
+      MYSQL_USER: beerPass
+      MYSQL_PASSWORD: beerPass
+    networks:
+      - traefik_network
+      - mysql_network
+    volumes:
+      - mysqlDatabase:/var/lib/mysql
+    expose:
+      - "8888"
+    labels:
+      - "traefik.backend=phpmyadmin"
+      - "traefik.enable=true"
+      - "traefik.frontend.rule=Host:chic.iict.ch; PathPrefixStrip: /phpmyadmin"
+      - "traefik.port=8888"
+      - "traefik.docker.network=traefik_network"
+
+volumes:
+  mysqlDatabase:
+
+networks:
+  traefik_network:
+    external: true
+  mysql_network:
+    external: false

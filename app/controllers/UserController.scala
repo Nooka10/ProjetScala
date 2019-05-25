@@ -16,6 +16,8 @@ import scala.concurrent.{Await, Future}
 class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO, tokenController: TokenController) extends AbstractController(cc) {
 
   import models.UserLogin
+  import play.api.mvc.Action
+  import scala.util.Try
 
   implicit val userToJson: Writes[User] = (
     (JsPath \ "id").write[Option[Long]] and
@@ -171,6 +173,4 @@ class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO, toke
       ))
     }
   }
-
-
 }

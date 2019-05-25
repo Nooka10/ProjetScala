@@ -11,7 +11,7 @@
  Target Server Version : 50719
  File Encoding         : utf-8
 
- Date: 05/22/2019 22:37:03 PM
+ Date: 05/24/2019 01:02:54 AM
 */
 
 SET NAMES utf8mb4;
@@ -34,20 +34,6 @@ CREATE TABLE `Address` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- ----------------------------
---  Table structure for `Barmen`
--- ----------------------------
-DROP TABLE IF EXISTS `Barmen`;
-CREATE TABLE `Barmen` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `firstname` varchar(255) NOT NULL,
-  `lastname` varchar(255) NOT NULL,
-  `email` varchar(255) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `companyId` int(11) NOT NULL,
-  PRIMARY KEY (`id`,`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
--- ----------------------------
 --  Table structure for `Beer`
 -- ----------------------------
 DROP TABLE IF EXISTS `Beer`;
@@ -59,19 +45,6 @@ CREATE TABLE `Beer` (
   `image` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
--- ----------------------------
---  Table structure for `Client`
--- ----------------------------
-DROP TABLE IF EXISTS `Client`;
-CREATE TABLE `Client` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `firstname` varchar(255) NOT NULL,
-  `lastname` varchar(255) NOT NULL,
-  `email` varchar(255) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  PRIMARY KEY (`id`,`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 
 -- ----------------------------
 --  Table structure for `Company`
@@ -88,10 +61,10 @@ CREATE TABLE `Company` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- ----------------------------
---  Table structure for `HOpenClose`
+--  Table structure for `H_Open_Close`
 -- ----------------------------
-DROP TABLE IF EXISTS `HOpenClose`;
-CREATE TABLE `HOpenClose` (
+DROP TABLE IF EXISTS `H_Open_Close`;
+CREATE TABLE `H_Open_Close` (
   `id` int(11) NOT NULL,
   `hOpen` varchar(255) NOT NULL,
   `hClose` varchar(255) NOT NULL,
@@ -129,5 +102,20 @@ CREATE TABLE `Schedule` (
   `day` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+--  Table structure for `User`
+-- ----------------------------
+DROP TABLE IF EXISTS `User`;
+CREATE TABLE `User` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `firstname` varchar(255) NOT NULL,
+  `lastname` varchar(255) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `companyId` int(11) DEFAULT NULL,
+  `userType` enum('CLIENT','EMPLOYEE') NOT NULL DEFAULT 'CLIENT',
+  PRIMARY KEY (`id`,`email`)
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8;
 
 SET FOREIGN_KEY_CHECKS = 1;
