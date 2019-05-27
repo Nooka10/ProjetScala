@@ -1,7 +1,6 @@
 package dao
 
 import javax.inject.{Inject, Singleton}
-import models.Company
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import scala.concurrent.{ExecutionContext, Future}
 import slick.jdbc.JdbcProfile
@@ -9,6 +8,7 @@ import slick.jdbc.JdbcProfile
 trait CompanyComponent extends AddressComponent with ScheduleComponent {
   self: HasDatabaseConfigProvider[JdbcProfile] =>
 
+  import models.Company
   import profile.api._
 
   // This class convert the database's companys table in a object-oriented entity: the Company model.
@@ -19,18 +19,14 @@ trait CompanyComponent extends AddressComponent with ScheduleComponent {
 
     def description = column[Option[String]]("DESCRIPTION")
 
-    def scheduleId = column[Option[Long]]("SCHEDULE_ID")
-
     def addressId = column[Long]("ADDRESS_ID")
 
     def image = column[Option[String]]("IMAGE")
 
-    def schedule= foreignKey("SCHEDULE", scheduleId, schedules)(x => x.id)
-
     def address = foreignKey("ADDRESS", addressId, addresses)(x => x.id)
 
     // Map the attributes with the model; the ID is optional.
-    def * = (id.?, name, description, scheduleId, addressId, image) <> (Company.tupled, Company.unapply)
+    def * = (id.?, name, description, addressId, image) <> (Company.tupled, Company.unapply)
   }
 
   // Get the object-oriented list of courses directly from the query table.
@@ -42,22 +38,57 @@ trait CompanyComponent extends AddressComponent with ScheduleComponent {
 // driver. The class extends the company's query table and loads the JDBC profile configured in the application's
 // configuration file.
 @Singleton
-class CompanyDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)(implicit executionContext: ExecutionContext)
-  extends CompanyComponent with HasDatabaseConfigProvider[JdbcProfile] {
+class CompanyDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider, scheduleDAO: ScheduleDAO)(implicit executionContext: ExecutionContext)
+  extends CompanyComponent with AddressComponent with HasDatabaseConfigProvider[JdbcProfile] {
 
+  import models.{Address, Company, CompanyWithObjects, Schedule}
   import profile.api._
+  import scala.concurrent.Await
+  import scala.concurrent.duration.Duration
 
   /** Retrieve a company from the id. */
-  def findById(id: Long): Future[Option[Company]] = db.run(companies.filter(_.id === id).result.headOption)
+  def findById(id: Long): Future[Option[CompanyWithObjects]] = {
+    val query = for {
+      company <- companies if company.id === id
+      address <- company.address
+    } yield (company, address)
+
+    val triple: Future[Option[(Company, Address)]] = db.run(query.result.headOption)
+    val schedules: Seq[Schedule] = Await
+      .result(scheduleDAO.findAllDailySchedulesFromCompanyId(id), Duration
+        .Inf) // fixme: ya pas moyen de mettre une future dans le for expression pour tout attendre d'un coup ?
+
+    triple.map(t => if (t.nonEmpty) {
+      Some(CompanyWithObjects.fromCompany(t.get._1, t.get._2, Some(schedules)))
+    } else {
+      None
+    })
+  }
+
+  def find: Future[Seq[CompanyWithObjects]] = {
+    val query = for {
+      company <- companies
+      address <- company.address
+    } yield (company, address)
+
+    val triples: Future[Seq[(Company, Address)]] = db.run(query.result)
+    triples
+      .map(triple => triple
+        .map(t => CompanyWithObjects
+          .fromCompany(t._1, t._2, Some(Await
+            .result(scheduleDAO.findAllDailySchedulesFromCompanyId(t._1.id.get), Duration
+              .Inf))))) // fixme: ya pas moyen de mettre une future dans le for expression pour tout attendre d'un coup ?
+  }
 
   /** Insert a new course, then return it. */
   def insert(company: Company): Future[Company] = db.run(companies returning companies.map(_.id) into ((company, id) => company.copy(Some(id))) += company)
 
   /** Update a company, then return an integer that indicates if the company was found (1) or not (0). */
-  def update(id: Long, company: Company): Future[Int] = db.run(companies.filter(_.id === id).update(company.copy(Some(id))))
+  def update(id: Long, company: Company): Future[Option[Company]] = db.run(companies.filter(_.id === id).update(company.copy(Some(id))).map {
+    case 0 => None
+    case _ => Some(company)
+  })
 
   /** Delete a company, then return an integer that indicates if the company was found (1) or not (0) */
   def delete(id: Long): Future[Int] = db.run(companies.filter(_.id === id).delete)
-
-  // TODO: ajouter une méthode pour modifier l'horaire, l'adresse, les bières et l'image
 }

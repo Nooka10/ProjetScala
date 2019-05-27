@@ -1,12 +1,10 @@
 package controllers
 
+import models.User
 import pdi.jwt.{JwtAlgorithm, JwtClaim, JwtJson}
 import play.api.libs.json.JsObject
 
 class TokenController {
-
-  import models.User
-  import scala.util.Try
 
   private val secretKey = "secretKey"
   private val algorithm = JwtAlgorithm.HS256
@@ -24,9 +22,11 @@ class TokenController {
     JwtJson.encode(claim, secretKey, algorithm)
   }
 
+  /*
   def validateToken(token: Option[String]): Try[JsObject] = {
     if (token.nonEmpty) {
       JwtJson.decodeJsonAll(token.get, secretKey, Seq(algorithm))
     }
   }
+   */
 }

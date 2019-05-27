@@ -1,26 +1,22 @@
 package controllers
 
 import com.github.t3hnar.bcrypt._
-import dao.UserDAO
+import dao.{OfferDAO, UserDAO}
 import javax.inject.{Inject, Singleton}
-import models.User
+import models.{User, UserLogin}
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents}
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.Duration
 
 @Singleton
-class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO, tokenController: TokenController) extends AbstractController(cc) {
-
-  import models.UserLogin
-  import play.api.mvc.Action
-  import scala.util.Try
+class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO, offersDAO: OfferDAO, tokenController: TokenController) extends AbstractController(cc) {
 
   implicit val userToJson: Writes[User] = (
-    (JsPath \ "id").write[Option[Long]] and
+    (JsPath \ "id").writeNullable[Long] and
       (JsPath \ "firstname").write[String] and
       (JsPath \ "lastname").write[String] and
       (JsPath \ "email").write[String] and
@@ -33,7 +29,7 @@ class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO, toke
     (JsPath \ "id").readNullable[Long] and
       (JsPath \ "firstname").read[String](minLength[String](3) keepAnd maxLength[String](30)) and
       (JsPath \ "lastname").read[String](minLength[String](3) keepAnd maxLength[String](30)) and
-      (JsPath \ "email").read[String](minLength[String](3) keepAnd maxLength[String](30)) and
+      (JsPath \ "email").read[String](email) and
       (JsPath \ "password").read[String](minLength[String](6)) and
       (JsPath \ "userType").read[String] and // FIXME: comment checker que la valeur contient CLIENT ou EMPLOYEE mais rien d'autre?
       (JsPath \ "companyId").readNullable[Long]
@@ -49,8 +45,6 @@ class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO, toke
   )
 
   def createUser = Action.async(validateJson[User]) { request =>
-    import scala.concurrent.Await
-    import scala.concurrent.duration.Duration
     if (Await.ready(usersDAO.isEmailAvailable(request.body.email), Duration.Inf).value.get.get) {
       Future(Conflict(
         Json.obj(
@@ -60,8 +54,7 @@ class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO, toke
       ))
     } else {
       val password: String = request.body.password.bcrypt(10)
-      // FIXME: Est-il possible de réassigner juste une valeur de la request? (modifier juste le champ password sans devoir recréer tout un User...)
-      val user: User = User(null, request.body.firstname, request.body.lastname, request.body.email, password, request.body.userType, request.body.companyId)
+      val user: User = request.body.copy(password = password)
 
       val createdUser: Future[User] = usersDAO.insert(user)
 
@@ -137,14 +130,14 @@ class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO, toke
       val userToUpdate: User = request.body
       if (userToUpdate.password.isBcryptedSafe(userInDB.password).get) { // passwords match
         usersDAO.update(userId, userToUpdate).map {
-          case 1 => Ok(
+          case Some(user) => Ok(
             Json.obj(
               "status" -> "OK",
-              "message" -> ("User '" + userToUpdate.firstname + " " + userToUpdate.lastname + "' updated."),
-              "user info updated" -> Json.toJson(userToUpdate)
+              "message" -> ("User '" + user.firstname + " " + user.lastname + "' updated."),
+              "user info updated" -> Json.toJson(user)
             )
           )
-          case 0 => NotFound(Json.obj(
+          case None => NotFound(Json.obj(
             "status" -> "Not Found",
             "message" -> ("User #" + userId + " not found.")
           ))
@@ -173,4 +166,26 @@ class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO, toke
       ))
     }
   }
+
+  /*
+  def getUserOffers(userId: Long) = {
+    usersDAO.findById(userId).map {
+      case Some(user) => offersDAO.findAllOffersOfUser(user.id)
+      case None => NotFound(Json.obj(
+        "status" -> "Not Found",
+        "message" -> ("User #" + userId + " not found.")
+      ))
+    }
+  }
+
+  def useOffer(userId: Long, companyId: Long, choosenBeerId: Long) = {
+    usersDAO.findById(userId).map {
+      case Some(user) => offersDAO.update(user.id, companyId, choosenBeerId)
+      case None => NotFound(Json.obj(
+        "status" -> "Not Found",
+        "message" -> ("User #" + userId + " not found.")
+      ))
+    }
+  }
+   */
 }

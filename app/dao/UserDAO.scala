@@ -24,9 +24,9 @@ trait UserComponent extends CompanyComponent {
     def password = column[String]("PASSWORD")
 
     // FIXME: comment faire un mapper pour pouvoir utiliser l'enum directement dans la DB MySQL ?
-    def userType = column[String]("USERTYPE") // CLIENT or EMPLOYEE
+    def userType = column[String]("USER_TYPE") // CLIENT or EMPLOYEE
 
-    def companyId = column[Option[Long]]("COMPANYID")
+    def companyId = column[Option[Long]]("COMPANY_ID")
 
     def company = foreignKey("COMPANY", companyId, companies)(_.id, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
 
@@ -69,6 +69,8 @@ class UserDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)(
   /** Retrieve a user from the email. */
   def findByEmail(email: String): Future[Option[User]] = db.run(users.filter(_.email === email).result.headOption)
 
+  def findAllEmployees(companyId: Long): Future[Seq[User]] = db.run(users.filter(_.companyId === companyId).result)
+
   /** Retrieve a user from the id. */
   def isEmailAvailable(email: String): Future[Boolean] = db.run(users.filter(_.email === email).exists.result)
 
@@ -76,7 +78,10 @@ class UserDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)(
   def insert(user: User): Future[User] = db.run(users returning users.map(_.id) into ((user, id) => user.copy(Some(id))) += user)
 
   /** Update a user, then return an integer that indicates if the user was found (1) or not (0). */
-  def update(id: Long, user: User): Future[Int] = db.run(users.filter(_.id === id).update(user.copy(Some(id)))) // FIXME: C'est possible de retourner l'utilisateur ou null plutôt qu'un 1 ou un 0 ?
+  def update(id: Long, user: User): Future[Option[User]] = db.run(users.filter(_.id === id).update(user.copy(Some(id))).map {
+    case 0 => None
+    case _ => Some(user)
+  })
 
   /** Delete a user, then return an integer that indicates if the user was found (1) or not (0) */
   def delete(id: Long): Future[Int] = db.run(users.filter(_.id === id).delete)

@@ -48,10 +48,11 @@ class BeerDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)(
   def insert(beer: Beer): Future[Beer] = db.run(beers returning beers.map(_.id) into ((beer, id) => beer.copy(Some(id))) += beer)
 
   /** Update a beer, then return an integer that indicates if the beer was found (1) or not (0). */
-  def update(id: Long, beer: Beer): Future[Int] = db.run(beers.filter(_.id === id).update(beer.copy(Some(id))))
+  def update(id: Long, beer: Beer): Future[Option[Beer]] = db.run(beers.filter(_.id === id).update(beer.copy(Some(id))).map {
+    case 0 => None
+    case _ => Some(beer)
+  })
 
   /** Delete a beer, then return an integer that indicates if the beer was found (1) or not (0) */
   def delete(id: Long): Future[Int] = db.run(beers.filter(_.id === id).delete)
-
-  // TODO: ajouter une méthode pour modifier l'horaire, l'adresse, les bières et l'image
 }

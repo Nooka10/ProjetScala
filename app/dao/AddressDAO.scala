@@ -54,10 +54,11 @@ class AddressDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvide
   def insert(address: Address): Future[Address] = db.run(addresses returning addresses.map(_.id) into ((address, id) => address.copy(Some(id))) += address)
 
   /** Update a address, then return an integer that indicates if the address was found (1) or not (0). */
-  def update(id: Long, address: Address): Future[Int] = db.run(addresses.filter(_.id === id).update(address.copy(Some(id))))
+  def update(address: Address) = db.run(addresses.filter(_.id === address.id).update(address.copy(address.id)).map{
+    case 0 => None
+    case _ => Some(address)
+  })
 
   /** Delete a address, then return an integer that indicates if the address was found (1) or not (0) */
   def delete(id: Long): Future[Int] = db.run(addresses.filter(_.id === id).delete)
-
-  // TODO: ajouter une méthode pour modifier l'horaire, l'adresse, les bières et l'image
 }

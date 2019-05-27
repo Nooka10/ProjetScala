@@ -4,14 +4,23 @@
 # ~~~~
 
 # An example controller showing a sample home page
-GET           /                    controllers.HomeController.index
+GET           /                     controllers.HomeController.index
 
 # Map static resources from the /public folder to the /assets URL path
-GET           /assets/*file        controllers.Assets.versioned(path="/public", file: Asset)
+GET           /assets/*file         controllers.Assets.versioned(path="/public", file: Asset)
 
 # REST API endpoints
-POST          /register            controllers.UserController.createUser
-POST          /login               controllers.UserController.login
-GET           /users/:id           controllers.UserController.getUser(id: Long)
-PUT           /users/:id           controllers.UserController.updateUser(id: Long)
-DELETE        /users/:id           controllers.UserController.deleteUser(id: Long)
+POST          /register             controllers.UserController.createUser
+POST          /login                controllers.UserController.login
+GET           /users/:id            controllers.UserController.getUser(id: Long)
+PUT           /users/:id            controllers.UserController.updateUser(id: Long)
+DELETE        /users/:id            controllers.UserController.deleteUser(id: Long)
+
+#GET           /users/:id/offers        controllers.UserController.getUserOffers(id: Long)
+
+POST          /companies            controllers.CompanyController.createCompany
+GET           /companies            controllers.CompanyController.getCompanies
+GET           /companies/:id        controllers.CompanyController.getCompany(id: Long)
+GET           /companies/:id/employees        controllers.CompanyController.getEmployees(id: Long)
+PUT           /companies/:id        controllers.CompanyController.updateCompany(id: Long)
+DELETE        /companies/:id        controllers.CompanyController.deleteCompany(id: Long)
