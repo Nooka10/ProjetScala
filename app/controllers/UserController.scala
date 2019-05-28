@@ -19,7 +19,6 @@ class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO, offe
   )
 
   def createUser = Action.async(validateJson[User]) { request =>
-
     usersDAO.isEmailAvailable(request.body.email).map {
       case true => Conflict(
         Json.obj(

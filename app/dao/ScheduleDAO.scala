@@ -8,8 +8,11 @@ import slick.jdbc.JdbcProfile
 trait ScheduleComponent extends CompanyComponent {
   self: HasDatabaseConfigProvider[JdbcProfile] =>
 
-  import models.{Link_DailySchedule_Company, DailySchedule}
+  import models.{DailySchedule, Link_DailySchedule_Company}
   import profile.api._
+  import scala.concurrent.Await
+  import scala.concurrent.duration.Duration
+  import slick.dbio.DBIOAction
 
   // This class convert the database's schedules table in a object-oriented entity: the Schedule model.
   class ScheduleTable(tag: Tag) extends Table[DailySchedule](tag, "DAILY_SCHEDULE") {
@@ -20,20 +23,20 @@ trait ScheduleComponent extends CompanyComponent {
 
     def day = column[String]("DAY")
 
-    def hOpenAM = column[String]("H_OPEN_AM")
+    def hOpenAM = column[String]("H_OPEN")
 
     def hCloseAM = column[Option[String]]("H_CLOSE_AM")
 
     def hOpenPM = column[Option[String]]("H_OPEN_PM")
 
-    def hClosePM = column[String]("H_CLOSE_PM")
+    def hClosePM = column[String]("H_CLOSE")
 
     // Map the attributes with the model; the ID is optional.
     def * = (id.?, day, hOpenAM, hCloseAM, hOpenPM, hClosePM) <> (DailySchedule.tupled, DailySchedule.unapply)
   }
 
-  // This class convert the database's linkScheduleHOpenCloses table in a object-oriented entity: the LinkScheduleHOpenClose model.
-  class LinkScheduleCompanytable(tag: Tag) extends Table[Link_DailySchedule_Company](tag, "Link_Schedule_H_Open_Close") {
+  // This class convert the database's LINK_SCHEDULE_COMPANY table in a object-oriented entity: the LINK_SCHEDULE_COMPANY model.
+  class LinkScheduleCompanyTable(tag: Tag) extends Table[Link_DailySchedule_Company](tag, "LINK_DAILY_SCHEDULE_COMPANY") {
 
     import models.Link_DailySchedule_Company
 
@@ -41,20 +44,21 @@ trait ScheduleComponent extends CompanyComponent {
 
     def companyId = column[Long]("COMPANY_ID")
 
-    def scheduleId = column[Long]("DAILY_SCHEDULE_ID")
+    def dailyScheduleId = column[Long]("DAILY_SCHEDULE_ID")
 
     def company = foreignKey("COMPANY", companyId, companies)(x => x.id)
 
-    def schedule = foreignKey("SCHEDULE", scheduleId, schedules)(x => x.id, onDelete = ForeignKeyAction.Cascade)
+    def schedule = foreignKey("SCHEDULE", dailyScheduleId, schedules)(x => x.id, onDelete = ForeignKeyAction.Cascade)
 
 
     // Map the attributes with the model; the ID is optional.
-    def * = (id.?, companyId, scheduleId) <> (Link_DailySchedule_Company.tupled, Link_DailySchedule_Company.unapply)
+    def * = (id.?, companyId, dailyScheduleId) <> (Link_DailySchedule_Company.tupled, Link_DailySchedule_Company.unapply)
   }
 
   // Get the object-oriented list of courses directly from the query table.
   lazy val schedules = TableQuery[ScheduleTable]
-  lazy val linkScheduleCompany = TableQuery[LinkScheduleCompanytable]
+  lazy val linkScheduleCompany = TableQuery[LinkScheduleCompanyTable]
+  Await.result(db.run(DBIOAction.seq(schedules.schema.createIfNotExists, linkScheduleCompany.schema.createIfNotExists)), Duration.Inf) // FIXME: Est-ce possible de créer toutes les tables d'un coup?
 }
 
 // This class contains the object-oriented list of Link_Schedule_Company and offers methods to query the data.
@@ -118,10 +122,10 @@ class ScheduleDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
     /*
     val query = for {
       linkSC <- linkScheduleCompany.filter(_.scheduleId === scheduleId)
-      // schedule <- schedules.filter(_.id === scheduleId).delete if linkSC == 1
+      // schedule <- schedules.filter(_.id === scheduleId).delete if linkSC === 1
     } yield schedule
      */
 
-    db.run(linkScheduleCompany.filter(_.scheduleId === scheduleId).delete) // TODO: checker si la foreign key est aussi supprimée
+    db.run(linkScheduleCompany.filter(_.dailyScheduleId === scheduleId).delete) // TODO: checker si la foreign key est aussi supprimée
   }
 }

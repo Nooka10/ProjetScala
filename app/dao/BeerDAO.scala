@@ -10,6 +10,9 @@ trait BeerComponent {
   self: HasDatabaseConfigProvider[JdbcProfile] =>
 
   import profile.api._
+  import scala.concurrent.Await
+  import scala.concurrent.duration.Duration
+  import slick.dbio.DBIOAction
 
   // This class convert the database's beers table in a object-oriented entity: the Beer model.
   class BeerTable(tag: Tag) extends Table[Beer](tag, "BEER") {
@@ -29,6 +32,7 @@ trait BeerComponent {
 
   // Get the object-oriented list of courses directly from the query table.
   lazy val beers = TableQuery[BeerTable]
+  Await.result(db.run(DBIOAction.seq(beers.schema.createIfNotExists)), Duration.Inf) // FIXME: Est-ce possible de créer toutes les tables d'un coup?
 }
 
 // This class contains the object-oriented list of beer and offers methods to query the data.

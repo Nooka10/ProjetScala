@@ -10,16 +10,19 @@ trait OfferComponent extends CompanyComponent with UserComponent with BeerCompon
   self: HasDatabaseConfigProvider[JdbcProfile] =>
 
   import profile.api._
+  import scala.concurrent.Await
+  import scala.concurrent.duration.Duration
+  import slick.dbio.DBIOAction
 
   // This class convert the database's offers table in a object-oriented entity: the Offer model.
   class OfferTable(tag: Tag) extends Table[Offer](tag, "OFFER") {
-    def companyId = column[Long]("COMPANY_ID", O.PrimaryKey) // Primary key
+    def companyId = column[Long]("COMPANY_ID")
 
-    def userId = column[Long]("CLIENT_ID", O.PrimaryKey) // Primary key
+    def userId = column[Long]("CLIENT_ID")
+
+    // def pKey = primaryKey("KEYS", (companyId, userId))
 
     def beerId = column[Option[Long]]("BEER_ID")
-
-    // def primaryKey = primaryKey("primaryKey", (companyId, userId))
 
     def company = foreignKey("COMPANY", companyId, companies)(x => x.id)
 
@@ -33,6 +36,7 @@ trait OfferComponent extends CompanyComponent with UserComponent with BeerCompon
 
   // Get the object-oriented list of courses directly from the query table.
   lazy val offers = TableQuery[OfferTable]
+  Await.result(db.run(DBIOAction.seq(offers.schema.createIfNotExists)), Duration.Inf) // FIXME: Est-ce possible de créer toutes les tables d'un coup?
 }
 
 // This class contains the object-oriented list of offer and offers methods to query the data.
@@ -51,7 +55,7 @@ class OfferDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
     val query = for {
       offer <- offers
       company <- offer.company if company.id === companyId
-      user <- offer.user if user.id === userId && user.userType == UserTypeEnum.CLIENT
+      user <- offer.user if user.id === userId && user.userType === UserTypeEnum.CLIENT
       beer <- offer.beer
     } yield (company, user, beer)
 
@@ -63,7 +67,7 @@ class OfferDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
   def findAllOffersOfUser(userId: Long): Future[Seq[OfferWithObjects]] = {
     val query = for {
       offer <- offers
-      user <- offer.user if user.id === userId && user.userType == UserTypeEnum.CLIENT
+      user <- offer.user if user.id === userId && user.userType === UserTypeEnum.CLIENT
       company <- offer.company
       beer <- offer.beer
     } yield (company, user, beer)
@@ -74,7 +78,7 @@ class OfferDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
   def findAllUnusedOffersOfUser(userId: Long): Future[Seq[OfferWithObjects]] = {
     val query = for {
       offer <- offers if offer.beerId.isEmpty // si beerId est null -> l'offre n'a pas encore été utilisée
-      user <- offer.user if user.id === userId && user.userType == UserTypeEnum.CLIENT
+      user <- offer.user if user.id === userId && user.userType === UserTypeEnum.CLIENT
       company <- offer.company
       beer <- offer.beer
     } yield (company, user, beer)

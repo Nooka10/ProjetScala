@@ -11,6 +11,9 @@ trait UserComponent extends CompanyComponent {
 
   import models.UserTypeEnum
   import profile.api._
+  import scala.concurrent.Await
+  import scala.concurrent.duration.Duration
+  import slick.dbio.DBIOAction
 
   implicit lazy val userTypeMapper = MappedColumnType.base[UserTypeEnum.Value, String](
     e => e.toString,
@@ -26,7 +29,7 @@ trait UserComponent extends CompanyComponent {
 
     def lastname = column[String]("LASTNAME")
 
-    def email = column[String]("EMAIL", O.Unique)
+    def email = column[String]("EMAIL")
 
     def password = column[String]("PASSWORD")
 
@@ -34,7 +37,7 @@ trait UserComponent extends CompanyComponent {
 
     def companyId = column[Option[Long]]("COMPANY_ID")
 
-    def company = foreignKey("COMPANY", companyId, companies)(_.id, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    def company = foreignKey("COMPANY", companyId, companies)(_.id)
 
     // Map the attributes with the model; the ID is optional.
     def * = (id.?, firstname, lastname, email, password, userType, companyId) <> (User.tupled, User.unapply)
@@ -42,6 +45,7 @@ trait UserComponent extends CompanyComponent {
   
   // Get the object-oriented list of courses directly from the query table.
   lazy val users = TableQuery[UserTable]
+  Await.result(db.run(DBIOAction.seq(users.schema.createIfNotExists)), Duration.Inf) // FIXME: Est-ce possible de créer toutes les tables d'un coup?
 }
 
 // This class contains the object-oriented list of user and offers methods to query the data.

@@ -12,9 +12,9 @@ case class DailySchedule(id: Option[Long], day: String, hOpenAM: String, hCloseA
 
 case class Link_DailySchedule_Company(id: Option[Long], companyId: Long, dailyScheduleId: Long)
 
-case class Offer(companyId: Long, userId: Long, beerId: Option[Long])
+case class Offer(companyId: Long, clientId: Long, beerId: Option[Long])
 
-case class OfferWithObjects(company: Company, user: User, beer: Option[Beer])
+case class OfferWithObjects(company: Company, client: User, beer: Option[Beer])
 
 case class User(id: Option[Long], firstname: String, lastname: String, email: String, password: String, userType: UserTypeEnum.Value, companyId: Option[Long])
 

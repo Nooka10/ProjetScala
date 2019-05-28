@@ -10,6 +10,9 @@ trait CompanyComponent extends AddressComponent {
   self: HasDatabaseConfigProvider[JdbcProfile] =>
 
   import profile.api._
+  import scala.concurrent.Await
+  import scala.concurrent.duration.Duration
+  import slick.dbio.DBIOAction
 
   // This class convert the database's companys table in a object-oriented entity: the Company model.
   class CompanyTable(tag: Tag) extends Table[Company](tag, "COMPANY") {
@@ -24,7 +27,7 @@ trait CompanyComponent extends AddressComponent {
 
     def image = column[Option[String]]("IMAGE")
 
-    def address = foreignKey("ADDRESS", addressId, addresses)(x => x.id)
+    def address = foreignKey("ADDRESS", addressId, addresses)(x => x.id, onDelete = ForeignKeyAction.Cascade)
 
     // Map the attributes with the model; the ID is optional.
     def * = (id.?, name, description, addressId, image) <> (Company.tupled, Company.unapply)
@@ -32,6 +35,7 @@ trait CompanyComponent extends AddressComponent {
 
   // Get the object-oriented list of courses directly from the query table.
   lazy val companies = TableQuery[CompanyTable]
+  Await.result(db.run(DBIOAction.seq(companies.schema.createIfNotExists)), Duration.Inf) // FIXME: Est-ce possible de créer toutes les tables d'un coup?
 }
 
 // This class contains the object-oriented list of company and offers methods to query the data.
