@@ -8,13 +8,13 @@ import slick.jdbc.JdbcProfile
 trait ScheduleComponent extends CompanyComponent {
   self: HasDatabaseConfigProvider[JdbcProfile] =>
 
-  import models.{Link_Schedule_Company, Schedule}
+  import models.{Link_DailySchedule_Company, DailySchedule}
   import profile.api._
 
   // This class convert the database's schedules table in a object-oriented entity: the Schedule model.
-  class ScheduleTable(tag: Tag) extends Table[Schedule](tag, "DAILY_SCHEDULE") {
+  class ScheduleTable(tag: Tag) extends Table[DailySchedule](tag, "DAILY_SCHEDULE") {
 
-    import models.Schedule
+    import models.DailySchedule
 
     def id = column[Long]("ID", O.PrimaryKey, O.AutoInc) // Primary key, auto-incremented
 
@@ -29,13 +29,13 @@ trait ScheduleComponent extends CompanyComponent {
     def hClosePM = column[String]("H_CLOSE_PM")
 
     // Map the attributes with the model; the ID is optional.
-    def * = (id.?, day, hOpenAM, hCloseAM, hOpenPM, hClosePM) <> (Schedule.tupled, Schedule.unapply)
+    def * = (id.?, day, hOpenAM, hCloseAM, hOpenPM, hClosePM) <> (DailySchedule.tupled, DailySchedule.unapply)
   }
 
   // This class convert the database's linkScheduleHOpenCloses table in a object-oriented entity: the LinkScheduleHOpenClose model.
-  class LinkScheduleCompanytable(tag: Tag) extends Table[Link_Schedule_Company](tag, "Link_Schedule_H_Open_Close") {
+  class LinkScheduleCompanytable(tag: Tag) extends Table[Link_DailySchedule_Company](tag, "Link_Schedule_H_Open_Close") {
 
-    import models.Link_Schedule_Company
+    import models.Link_DailySchedule_Company
 
     def id = column[Long]("ID", O.PrimaryKey, O.AutoInc) // Primary key, auto-incremented
 
@@ -45,11 +45,11 @@ trait ScheduleComponent extends CompanyComponent {
 
     def company = foreignKey("COMPANY", companyId, companies)(x => x.id)
 
-    def schedule = foreignKey("SCHEDULE", scheduleId, schedules)(x => x.id)
+    def schedule = foreignKey("SCHEDULE", scheduleId, schedules)(x => x.id, onDelete = ForeignKeyAction.Cascade)
 
 
     // Map the attributes with the model; the ID is optional.
-    def * = (id.?, companyId, scheduleId) <> (Link_Schedule_Company.tupled, Link_Schedule_Company.unapply)
+    def * = (id.?, companyId, scheduleId) <> (Link_DailySchedule_Company.tupled, Link_DailySchedule_Company.unapply)
   }
 
   // Get the object-oriented list of courses directly from the query table.
@@ -65,11 +65,11 @@ trait ScheduleComponent extends CompanyComponent {
 class ScheduleDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)(implicit executionContext: ExecutionContext)
   extends ScheduleComponent with HasDatabaseConfigProvider[JdbcProfile] {
 
-  import models.{Link_Schedule_Company, Schedule}
+  import models.{Link_DailySchedule_Company, DailySchedule}
   import profile.api._
 
   /** Retrieve all daily schedules of a company from the companyId. */
-  def findAllDailySchedulesFromCompanyId(companyId: Long): Future[Seq[Schedule]] = {
+  def findAllDailySchedulesFromCompanyId(companyId: Long): Future[Seq[DailySchedule]] = {
     val query = for {
       linkSC <- linkScheduleCompany if linkSC.companyId === companyId
       schedule <- linkSC.schedule
@@ -79,7 +79,7 @@ class ScheduleDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
   }
 
   /** Retrieve the daily schedules of a company from the companyId and the day. */
-  def findDailySchedulesFromCompanyIdAndDay(companyId: Long, day: String): Future[Option[Schedule]] = {
+  def findDailySchedulesFromCompanyIdAndDay(companyId: Long, day: String): Future[Option[DailySchedule]] = {
     val query = for {
       linkSC <- linkScheduleCompany if linkSC.companyId === companyId
       schedule <- linkSC.schedule if schedule.day === day
@@ -89,18 +89,19 @@ class ScheduleDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
   }
 
   /** Insert a new schedule, then return it. */
-  def insert(schedule: Schedule, companyId: Long): Future[Schedule] = {
+  def insert(schedule: DailySchedule, companyId: Long): Future[DailySchedule] = {
+    // FIXME: C'est correct de faire ça??
     val query = for {
       schedule <- schedules returning schedules.map(_.id) into ((schedule, id) => schedule.copy(Some(id))) += schedule
       _ <- linkScheduleCompany returning linkScheduleCompany.map(_.id) into ((LinkScheduleCompany, id) => LinkScheduleCompany.copy(Some(id))) +=
-        Link_Schedule_Company(null, companyId, schedule.id.get)
+        Link_DailySchedule_Company(null, companyId, schedule.id.get)
     } yield schedule
 
     db.run(query)
   }
 
   /** Update a schedule. */
-  def update(schedule: Schedule): Future[Option[Schedule]] = {
+  def update(schedule: DailySchedule): Future[Option[DailySchedule]] = {
     val query = for {
       schedule <- schedules.filter(_.id === schedule.id).update(schedule)
     } yield schedule
@@ -113,11 +114,14 @@ class ScheduleDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
 
   /** Delete a schedule, then return an integer that indicates if the LinkScheduleCompany was found (1) or not (0) */
   def delete(scheduleId: Long): Future[Int] = {
-    val query = for {
-      linkSC <- linkScheduleCompany.filter(_.scheduleId === scheduleId).delete
-      schedule <- schedules.filter(_.id === scheduleId).delete if linkSC == 1 // TODO: est-ce que faire le ==1 suffit pour ne pas le supprimer si la suppression de linkSC échoue?
-    } yield schedule
 
-    db.run(query)
+    /*
+    val query = for {
+      linkSC <- linkScheduleCompany.filter(_.scheduleId === scheduleId)
+      // schedule <- schedules.filter(_.id === scheduleId).delete if linkSC == 1
+    } yield schedule
+     */
+
+    db.run(linkScheduleCompany.filter(_.scheduleId === scheduleId).delete) // TODO: checker si la foreign key est aussi supprimée
   }
 }

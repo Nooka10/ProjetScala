@@ -1,18 +1,19 @@
 package dao
 
 import javax.inject.{Inject, Singleton}
+import models.{Company, CompanyWithObjects}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import scala.concurrent.{ExecutionContext, Future}
 import slick.jdbc.JdbcProfile
 
-trait CompanyComponent extends AddressComponent with ScheduleComponent {
+trait CompanyComponent extends AddressComponent {
   self: HasDatabaseConfigProvider[JdbcProfile] =>
 
-  import models.Company
   import profile.api._
 
   // This class convert the database's companys table in a object-oriented entity: the Company model.
   class CompanyTable(tag: Tag) extends Table[Company](tag, "COMPANY") {
+
     def id = column[Long]("ID", O.PrimaryKey, O.AutoInc) // Primary key, auto-incremented
 
     def name = column[String]("NAME")
@@ -39,45 +40,36 @@ trait CompanyComponent extends AddressComponent with ScheduleComponent {
 // configuration file.
 @Singleton
 class CompanyDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider, scheduleDAO: ScheduleDAO)(implicit executionContext: ExecutionContext)
-  extends CompanyComponent with AddressComponent with HasDatabaseConfigProvider[JdbcProfile] {
+  extends CompanyComponent with AddressComponent with ScheduleComponent with HasDatabaseConfigProvider[JdbcProfile] {
 
-  import models.{Address, Company, CompanyWithObjects, Schedule}
   import profile.api._
-  import scala.concurrent.Await
-  import scala.concurrent.duration.Duration
+  import scala.collection.immutable
 
   /** Retrieve a company from the id. */
   def findById(id: Long): Future[Option[CompanyWithObjects]] = {
     val query = for {
       company <- companies if company.id === id
       address <- company.address
-    } yield (company, address)
+      linkSC <- linkScheduleCompany if linkSC.companyId === company.id
+      schedule <- linkSC.schedule
+    } yield (company, address, schedule)
 
-    val triple: Future[Option[(Company, Address)]] = db.run(query.result.headOption)
-    val schedules: Seq[Schedule] = Await
-      .result(scheduleDAO.findAllDailySchedulesFromCompanyId(id), Duration
-        .Inf) // fixme: ya pas moyen de mettre une future dans le for expression pour tout attendre d'un coup ?
-
-    triple.map(t => if (t.nonEmpty) {
-      Some(CompanyWithObjects.fromCompany(t.get._1, t.get._2, Some(schedules)))
-    } else {
-      None
-    })
+    db.run(query.result).map(e => e.groupBy(x => (x._1, x._2)).map {
+      case ((comp, addr), seq) => CompanyWithObjects.fromCompany(comp, addr, Some(seq.map(_._3)))
+    }.headOption)
   }
 
-  def find: Future[Seq[CompanyWithObjects]] = {
+  def find: Future[immutable.Iterable[CompanyWithObjects]] = {
     val query = for {
       company <- companies
       address <- company.address
-    } yield (company, address)
+      linkSC <- linkScheduleCompany if linkSC.companyId === company.id
+      schedule <- linkSC.schedule
+    } yield (company, address, schedule)
 
-    val triples: Future[Seq[(Company, Address)]] = db.run(query.result)
-    triples
-      .map(triple => triple
-        .map(t => CompanyWithObjects
-          .fromCompany(t._1, t._2, Some(Await
-            .result(scheduleDAO.findAllDailySchedulesFromCompanyId(t._1.id.get), Duration
-              .Inf))))) // fixme: ya pas moyen de mettre une future dans le for expression pour tout attendre d'un coup ?
+    db.run(query.result).map(e => e.groupBy(x => (x._1, x._2)).map {
+      case ((comp, addr), seq) => CompanyWithObjects.fromCompany(comp, addr, Some(seq.map(_._3)))
+    })
   }
 
   /** Insert a new course, then return it. */

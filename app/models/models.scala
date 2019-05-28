@@ -6,30 +6,34 @@ case class Beer(id: Option[Long], name: String, brand: String, degreeAlcohol: Op
 
 case class Company(id: Option[Long], name: String, description: Option[String], addressId: Long, image: Option[String])
 
-case class CompanyWithObjects(id: Option[Long], name: String, description: Option[String], schedule: Option[Seq[Schedule]], address: Address, image: Option[String])
+case class CompanyWithObjects(id: Option[Long], name: String, description: Option[String], schedules: Option[Seq[DailySchedule]], address: Address, image: Option[String])
 
-case class Link_Schedule_Company(id: Option[Long], companyId: Long, scheduleId: Long)
+case class DailySchedule(id: Option[Long], day: String, hOpenAM: String, hCloseAM: Option[String], hOpenPM: Option[String], hClosePM: String)
+
+case class Link_DailySchedule_Company(id: Option[Long], companyId: Long, dailyScheduleId: Long)
 
 case class Offer(companyId: Long, userId: Long, beerId: Option[Long])
 
 case class OfferWithObjects(company: Company, user: User, beer: Option[Beer])
 
-case class Schedule(id: Option[Long], day: String, hOpenAM: String, hCloseAM: Option[String], hOpenPM: Option[String], hClosePM: String)
-
-case class User(id: Option[Long], firstname: String, lastname: String, email: String, password: String, userType: String, companyId: Option[Long])
-
-// case class UserType(userType: String)
+case class User(id: Option[Long], firstname: String, lastname: String, email: String, password: String, userType: UserTypeEnum.Value, companyId: Option[Long])
 
 case class UserLogin(email: String, password: String)
 
 object CompanyWithObjects {
-  def fromCompany(company: Company, address: Address, schedule: Option[Seq[Schedule]]): CompanyWithObjects = {
+  def fromCompany(company: Company, address: Address, schedule: Option[Seq[DailySchedule]]): CompanyWithObjects = {
     CompanyWithObjects(company.id, company.name, company.description, schedule, address, company.image)
   }
 }
 
-object Company {
+object CompanyWithoutObjects {
   def fromCompanyWithObjects(company: CompanyWithObjects): Company = {
     Company(company.id, company.name, company.description, company.address.id.get, company.image)
   }
+}
+
+object UserTypeEnum extends Enumeration {
+  type userType = Value
+  val CLIENT = Value("CLIENT")
+  val EMPLOYEE = Value("EMPLOYEE")
 }

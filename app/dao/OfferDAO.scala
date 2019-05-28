@@ -19,6 +19,8 @@ trait OfferComponent extends CompanyComponent with UserComponent with BeerCompon
 
     def beerId = column[Option[Long]]("BEER_ID")
 
+    // def primaryKey = primaryKey("primaryKey", (companyId, userId))
+
     def company = foreignKey("COMPANY", companyId, companies)(x => x.id)
 
     def user = foreignKey("USER", userId, users)(x => x.id)
@@ -41,43 +43,52 @@ trait OfferComponent extends CompanyComponent with UserComponent with BeerCompon
 class OfferDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)(implicit executionContext: ExecutionContext)
   extends OfferComponent with HasDatabaseConfigProvider[JdbcProfile] {
 
-  import models.OfferWithObjects
+  import models.{Beer, Company, OfferWithObjects, User, UserTypeEnum}
   import profile.api._
 
-  /** Retrieve a offer from the id. */
-  def findById(companyId: Long, userId: Long, beerId: Option[Long]): Future[Option[OfferWithObjects]] = {
-
+  /** Retrieve an offer from his companyId and userId. */
+  def findById(companyId: Long, userId: Long): Future[Option[OfferWithObjects]] = {
     val query = for {
       offer <- offers
       company <- offer.company if company.id === companyId
-      user <- offer.user if user.id === userId && user.userType === "CLIENT"
+      user <- offer.user if user.id === userId && user.userType == UserTypeEnum.CLIENT
       beer <- offer.beer
     } yield (company, user, beer)
 
-    val triple = db.run(query.result.headOption)
-    triple.map(offer => if (offer.nonEmpty) {
-      Some(OfferWithObjects(offer.get._1, offer.get._2, Some(offer.get._3)))
-    } else {
-      None
-    })
+    val triple: Future[Option[(Company, User, Beer)]] = db.run(query.result.headOption)
+    triple.map(x => x.map(offer => OfferWithObjects(offer._1, offer._2, Some(offer._3))))
   }
 
-  /*
-  def findAllOffersOfUser(userId: Long) = ???
+  /** Retrieve all offers of a user from his userId. */
+  def findAllOffersOfUser(userId: Long): Future[Seq[OfferWithObjects]] = {
+    val query = for {
+      offer <- offers
+      user <- offer.user if user.id === userId && user.userType == UserTypeEnum.CLIENT
+      company <- offer.company
+      beer <- offer.beer
+    } yield (company, user, beer)
+
+    db.run(query.result).map(x => x.map(offer => OfferWithObjects(offer._1, offer._2, Some(offer._3))))
+  }
+
+  def findAllUnusedOffersOfUser(userId: Long): Future[Seq[OfferWithObjects]] = {
+    val query = for {
+      offer <- offers if offer.beerId.isEmpty // si beerId est null -> l'offre n'a pas encore été utilisée
+      user <- offer.user if user.id === userId && user.userType == UserTypeEnum.CLIENT
+      company <- offer.company
+      beer <- offer.beer
+    } yield (company, user, beer)
+
+    db.run(query.result).map(x => x.map(offer => OfferWithObjects(offer._1, offer._2, Some(offer._3))))
+  }
 
   /** Insert a new offer, then return it. */
-  def insert(offer: Offer): Future[Offer] = db.run(offers returning offers.map(_.id) into ((offer, id) => offer.copy(Some(id))) += offer)
+  def insert(offer: Offer): Future[Offer] = db.run(offers returning offers.map(o => (o.companyId, o.userId)) into ((offer, ids) => offer.copy(ids._1, ids._2)) += offer)
 
   /** Update a offer, then return an integer that indicates if the offer was found (1) or not (0). */
-  def update(userId: Long, companyId: Long, beerId: Long): Future[Int] = {
-    val query = for {
-      offer <- offers if offer.userId === offerToUpdate.userId && offer.companyId === offerToUpdate.companyId
-    } yield offer
-
-    db.run(offers.filter(_.userId === offer.userId).update(offer.copy(Some(id))))
-  }
+  def update(userId: Long, companyId: Long, beerId: Long): Future[Int] = db
+    .run(offers.filter(e => e.companyId === companyId && e.userId === userId).map(_.beerId).update(Some(beerId)))
 
   /** Delete a offer, then return an integer that indicates if the offer was found (1) or not (0) */
-  def delete(userId: Long, companyId: Long): Future[Int] = db.run(offers.filter(_.id === id).delete)
-   */
+  def delete(userId: Long, companyId: Long): Future[Int] = db.run(offers.filter(e => e.companyId === companyId && e.userId === userId).delete)
 }

@@ -8,7 +8,14 @@ import slick.jdbc.JdbcProfile
 
 trait UserComponent extends CompanyComponent {
   self: HasDatabaseConfigProvider[JdbcProfile] =>
+
+  import models.UserTypeEnum
   import profile.api._
+
+  implicit lazy val userTypeMapper = MappedColumnType.base[UserTypeEnum.Value, String](
+    e => e.toString,
+    s => UserTypeEnum.withName(s)
+  )
 
   // This class convert the database's users table in a object-oriented entity: the User model.
   class UserTable(tag: Tag) extends Table[User](tag, "USER") {
@@ -23,8 +30,7 @@ trait UserComponent extends CompanyComponent {
 
     def password = column[String]("PASSWORD")
 
-    // FIXME: comment faire un mapper pour pouvoir utiliser l'enum directement dans la DB MySQL ?
-    def userType = column[String]("USER_TYPE") // CLIENT or EMPLOYEE
+    def userType = column[UserTypeEnum.Value]("USER_TYPE") // CLIENT or EMPLOYEE
 
     def companyId = column[Option[Long]]("COMPANY_ID")
 
@@ -33,21 +39,6 @@ trait UserComponent extends CompanyComponent {
     // Map the attributes with the model; the ID is optional.
     def * = (id.?, firstname, lastname, email, password, userType, companyId) <> (User.tupled, User.unapply)
   }
-
-  /*
-  // FIXME: comment faire une enum en scala ?! ^^"
-  object UserType extends Enumeration {
-    type userType = Value
-    val CLIENT = Value("CLIENT")
-    val EMPLOYEE = Value("EMPLOYEE")
-  }
-
-  // FIXME: comment faire un mapper pour pouvoir utiliser l'enum directement dans la DB MySQL ?
-  implicit val javaEnumMapper = MappedColumnType.base[UserType, String](
-    e => e.toString,
-    s => UserType.withName(s)
-  )
-  */
   
   // Get the object-oriented list of courses directly from the query table.
   lazy val users = TableQuery[UserTable]
