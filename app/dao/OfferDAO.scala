@@ -115,4 +115,28 @@ class OfferDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
 
   /** Delete a offer, then return an integer that indicates if the offer was found (1) or not (0) */
   def delete(companyId: Long, clientId: Long): Future[Int] = db.run(offers.filter(e => e.companyId === companyId && e.clientId === clientId).delete)
+
+  def getMostPopularCompany = {
+    val query = (for {
+      //(offer, count) <- offers join companies.groupBy(_.id).map({ case (_, group) => group.map(_.id).max }) on ((offer, _) => offer.beerId.nonEmpty)
+      offer <- offers if offer.beerId.nonEmpty
+      company <- offer.company
+    } yield (offer, company)).groupBy(_._2.id).map {
+      case (companyId, offersCompany) => (companyId, offersCompany.length)
+    } // FIXME: comment faire pour récupérer juste le tuple avec le plus grand _.2 ?
+
+    db.run(query.result)
+  }
+
+  def getMostFamousBeer = {
+    val query = (for {
+      //(offer, count) <- offers join companies.groupBy(_.id).map({ case (_, group) => group.map(_.id).max }) on ((offer, _) => offer.beerId.nonEmpty)
+      offer <- offers if offer.beerId.nonEmpty
+      beer <- offer.beer
+    } yield (offer, beer)).groupBy(_._2.id).map {
+      case (beerId, offersCompany) => (beerId, offersCompany.length)
+    } // FIXME: comment faire pour récupérer juste le tuple avec le plus grand _.2 ?
+
+    db.run(query.result)
+  }
 }

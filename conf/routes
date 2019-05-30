@@ -43,3 +43,7 @@ GET           /beers/:id                                 controllers.BeerControl
 POST          /beers                                     controllers.BeerController.createBeer
 PUT           /beers                                     controllers.BeerController.updateBeer
 DELETE        /beers/:id                                 controllers.BeerController.deleteBeer(id: Long)
+
+# -------------------------------------------------------------- STATS ENDPOINTS --------------------------------------------------------------
+GET           /stats/mostPopularCompany                  controllers.StatsController.getMostPopularCompany
+GET           /stats/getMostFamousBeer                   controllers.StatsController.getMostFamousBeer
