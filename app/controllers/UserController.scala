@@ -1,5 +1,6 @@
 package controllers
 
+import Utils.ImplicitsJson._
 import com.github.t3hnar.bcrypt._
 import dao.{OfferDAO, UserDAO}
 import javax.inject.{Inject, Singleton}
@@ -9,10 +10,11 @@ import play.api.mvc.{AbstractController, ControllerComponents}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
-import Utils.ImplicitsJson._
 
 @Singleton
 class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO, offersDAO: OfferDAO, tokenController: TokenController) extends AbstractController(cc) {
+
+  import models.Offer
 
   def validateJson[A: Reads] = parse.json.validate(
     _.validate[A].asEither.left.map(e => BadRequest(JsError.toJson(e)))
@@ -29,15 +31,26 @@ class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO, offe
         val password: String = request.body.password.bcrypt(10)
         val user: User = request.body.copy(password = password)
 
-        Await.result(usersDAO.insert(user).map(newUser => Ok(
-          Json.obj(
-            "status" -> "OK",
-            "id" -> newUser.id,
-            "message" -> ("User '" + newUser.firstname + " " + newUser.lastname + "' saved."),
-            "user infos" -> newUser,
-            "token" -> tokenController.createConnectionToken(newUser)
-          )
-        )), Duration.Inf)
+        Await.result(usersDAO.insert(user).map(newUser =>
+          if(newUser.companyId.isEmpty) { // le nouvel utilisateur est un client
+            offersDAO.createAllOffersForNewUser(newUser.id.get).map(_ =>
+              Ok(Json.obj(
+                "status" -> "OK",
+                "id" -> newUser.id,
+                "message" -> ("User '" + newUser.firstname + " " + newUser.lastname + "' saved."),
+                "user infos" -> newUser,
+                "token" -> tokenController.createConnectionToken(newUser)
+              )))
+          } else { // le nouvel utilisateur est un employé (il n'a donc pas d'offres)
+            Future(Ok(Json.obj(
+              "status" -> "OK",
+              "id" -> newUser.id,
+              "message" -> ("User '" + newUser.firstname + " " + newUser.lastname + "' saved."),
+              "user infos" -> newUser,
+              "token" -> tokenController.createConnectionToken(newUser)
+            )))
+          }
+        ).flatten, Duration.Inf)
     }
   }
 
@@ -86,17 +99,26 @@ class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO, offe
     }
   }
 
-  def updateUser(userId: Long) = Action.async(validateJson[User]) { request =>
+  def updateUser = Action.async(validateJson[User]) { request =>
+    if (request.body.id.isEmpty) {
+      import scala.concurrent.Future
+      Future(BadRequest(Json.obj(
+        "status" -> "Bad Request",
+        "message" -> "The field 'id' is missing!"
+      )))
+    }
+
+    val userId: Long = request.body.id.get
     usersDAO.findById(userId).map {
       case None => NotFound(Json.obj(
-          "status" -> "Not Found",
-          "message" -> ("User #" + userId + " not found.")
+        "status" -> "Not Found",
+        "message" -> ("User #" + userId + " not found.")
       ))
       case Some(userInDB) =>
         val userToUpdate: User = request.body
 
         userToUpdate.password.isBcryptedSafe(userInDB.password).map {
-          case true => Await.result(usersDAO.update(userId, userToUpdate).map {
+          case true => Await.result(usersDAO.update(userToUpdate).map {
             case Some(user) => Ok(
               Json.obj(
                 "status" -> "OK",
@@ -132,22 +154,34 @@ class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO, offe
     }
   }
 
-
-  def getUserOffers(userId: Long) = Action.async {
+  def getAllOffersOfUser(userId: Long) = Action.async {
     offersDAO.findAllOffersOfUser(userId).map(offers => Ok(Json.toJson(offers)))
   }
 
-  /*
-  def useOffer(userId: Long, companyId: Long, choosenBeerId: Long) = {
-    usersDAO.findById(userId).map {
-      case Some(user) => offersDAO.update(user.id, companyId, choosenBeerId)
-      case None => NotFound(Json.obj(
-        "status" -> "Not Found",
-        "message" -> ("User #" + userId + " not found.")
-      ))
+  def getAllUnusedOffersOfUser(userId: Long) = Action.async {
+    offersDAO.findAllUnusedOffersOfUser(userId).map(offers => Ok(Json.toJson(offers)))
+  }
+
+  def getAllConsumedOffersOfUser(userId: Long) = Action.async {
+    offersDAO.findAllConsumedOffersOfUser(userId).map(offers => Ok(Json.toJson(offers)))
+  }
+
+  def useOffer = Action.async(validateJson[Offer]) { request =>
+    if (request.body.beerId.isEmpty) {
+      Future(BadRequest(Json.obj(
+        "status" -> "Bad Request",
+        "message" -> "The field 'beerId' is missing!"
+      )))
+    } else {
+      usersDAO.findById(request.body.clientId).map {
+        case Some(_) => Await.result(offersDAO.update(request.body).map(newOffer => Ok(Json.toJson(newOffer))), Duration.Inf)
+        case None => NotFound(Json.obj(
+          "status" -> "Not Found",
+          "message" -> ("User #" + request.body.clientId + " not found.")
+        ))
+      }
     }
   }
-   */
 }
 
 // TODO: Comment dockeriser un projet scala ?

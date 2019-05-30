@@ -23,4 +23,6 @@ class ScheduleController @Inject()(cc: ControllerComponents, scheduleDAO: Schedu
   def updateSchedule(schedule: DailySchedule): Future[Option[DailySchedule]] = scheduleDAO.update(schedule)
 
   def deleteSchedule(scheduleId: Long): Future[Int] = scheduleDAO.delete(scheduleId)
+  // FIXME: Pourquoi supprimer une company supprime le link_daily_schedule_company mais pas le daily_schedule correspondant?
+  // Pourtant, j'ai mis un trigger qui fait qu'avant de supprimer un link_daily_schedule_company il supprime le daily_schedule....
 }

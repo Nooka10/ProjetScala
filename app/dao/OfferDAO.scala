@@ -9,29 +9,29 @@ import slick.jdbc.JdbcProfile
 trait OfferComponent extends CompanyComponent with UserComponent with BeerComponent {
   self: HasDatabaseConfigProvider[JdbcProfile] =>
 
+  import models.OfferWithID
   import profile.api._
-  import scala.concurrent.Await
-  import scala.concurrent.duration.Duration
-  import slick.dbio.DBIOAction
 
   // This class convert the database's offers table in a object-oriented entity: the Offer model.
-  class OfferTable(tag: Tag) extends Table[Offer](tag, "OFFER") {
+  class OfferTable(tag: Tag) extends Table[OfferWithID](tag, "OFFER") {
+    def id = column[Option[Long]]("ID", O.PrimaryKey, O.AutoInc) // Primary key, auto-incremented
+
     def companyId = column[Long]("COMPANY_ID")
 
-    def userId = column[Long]("CLIENT_ID")
+    def clientId = column[Long]("CLIENT_ID")
 
-    // def pKey = primaryKey("KEYS", (companyId, userId))
+    def pKey = primaryKey("KEYS", (companyId, clientId))
 
     def beerId = column[Option[Long]]("BEER_ID")
 
     def company = foreignKey("COMPANY", companyId, companies)(_.id)
 
-    def user = foreignKey("USER", userId, users)(_.id)
+    def user = foreignKey("USER", clientId, users)(_.id)
 
     def beer = foreignKey("BEER", beerId, beers)(_.id)
 
     // Map the attributes with the model; the ID is optional.
-    def * = (companyId, userId, beerId) <> (Offer.tupled, Offer.unapply)
+    def * = (companyId, clientId, beerId, id) <> (OfferWithID.tupled, OfferWithID.unapply)
   }
 
   // Get the object-oriented list of courses directly from the query table.
@@ -46,15 +46,15 @@ trait OfferComponent extends CompanyComponent with UserComponent with BeerCompon
 class OfferDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)(implicit executionContext: ExecutionContext)
   extends OfferComponent with HasDatabaseConfigProvider[JdbcProfile] {
 
-  import models.{Beer, Company, OfferWithObjects, User, UserTypeEnum}
+  import models.{Beer, Company, OfferWithIDToOffer, OfferWithObjects, User, UserTypeEnum}
   import profile.api._
 
-  /** Retrieve an offer from his companyId and userId. */
-  def findById(companyId: Long, userId: Long): Future[Option[OfferWithObjects]] = {
+  /** Retrieve an offer from his companyId and clientId. */
+  def findById(companyId: Long, clientId: Long): Future[Option[OfferWithObjects]] = {
     val query = for {
       offer <- offers
       company <- offer.company if company.id === companyId
-      user <- offer.user if user.id === userId && user.userType === UserTypeEnum.CLIENT
+      user <- offer.user if user.id === clientId && user.userType === UserTypeEnum.CLIENT
       beer <- offer.beer
     } yield (company, user, beer)
 
@@ -62,36 +62,57 @@ class OfferDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
     triple.map(x => x.map(offer => OfferWithObjects(offer._1, offer._2, Some(offer._3))))
   }
 
-  /** Retrieve all offers of a user from his userId. */
-  def findAllOffersOfUser(userId: Long): Future[Seq[OfferWithObjects]] = {
+  /** Retrieve all offers of a user from his clientId. */
+  def findAllOffersOfUser(clientId: Long): Future[Seq[OfferWithObjects]] = {
     val query = for {
-      offer <- offers
-      user <- offer.user if user.id === userId && user.userType === UserTypeEnum.CLIENT
+      (offer, beer) <- offers joinLeft beers on (_.beerId === _.id)
+      user <- offer.user if user.id === clientId && user.userType === UserTypeEnum.CLIENT
       company <- offer.company
-      beer <- offer.beer
     } yield (company, user, beer)
 
-    db.run(query.result).map(x => x.map(offer => OfferWithObjects(offer._1, offer._2, Some(offer._3))))
+    db.run(query.result).map(_.map(offer => OfferWithObjects(offer._1, offer._2, offer._3)))
   }
 
-  def findAllUnusedOffersOfUser(userId: Long): Future[Seq[OfferWithObjects]] = {
+  def findAllUnusedOffersOfUser(clientId: Long): Future[Seq[OfferWithObjects]] = {
     val query = for {
-      offer <- offers if offer.beerId.isEmpty // si beerId est null -> l'offre n'a pas encore été utilisée
-      user <- offer.user if user.id === userId && user.userType === UserTypeEnum.CLIENT
+      (offer, beer) <- offers joinLeft beers on (_.beerId === _.id) if offer.beerId.isEmpty // si beerId est null -> l'offre n'a pas encore été utilisée
+      user <- offer.user if user.id === clientId && user.userType === UserTypeEnum.CLIENT
       company <- offer.company
-      beer <- offer.beer
     } yield (company, user, beer)
 
-    db.run(query.result).map(x => x.map(offer => OfferWithObjects(offer._1, offer._2, Some(offer._3))))
+    db.run(query.result).map(_.map(offer => OfferWithObjects(offer._1, offer._2, offer._3)))
+  }
+
+  def findAllConsumedOffersOfUser(clientId: Long): Future[Seq[OfferWithObjects]] = {
+    val query = for {
+      (offer, beer) <- offers joinLeft beers on (_.beerId === _.id) if offer.beerId.nonEmpty // si beerId est non null -> l'offre a déjà été utilisée
+      user <- offer.user if user.id === clientId && user.userType === UserTypeEnum.CLIENT
+      company <- offer.company
+    } yield (company, user, beer)
+
+    db.run(query.result).map(_.map(offer => OfferWithObjects(offer._1, offer._2, offer._3)))
+  }
+
+  def createAllOffersForNewUser(clientId: Long) = {
+    val query = for {
+      company <- companies
+    } yield company
+
+    val offers = query.result.map(companies => Future.sequence(companies.map(comp => insert(Offer(comp.id.get, clientId)))))
+    db.run(offers).flatten // permet de passer d'une Future[Future[...]] à une Future[...]
   }
 
   /** Insert a new offer, then return it. */
-  def insert(offer: Offer): Future[Offer] = db.run(offers returning offers.map(o => (o.companyId, o.userId)) into ((offer, ids) => offer.copy(ids._1, ids._2)) += offer)
+  def insert(offer: Offer): Future[Offer] = db.run(offers returning offers.map(_.id) into ((offer, id) => offer.copy(id = id)) += OfferWithIDToOffer.fromOffer(offer))
+    .map(o => Offer(o.companyId, o.clientId, o.beerId))
 
   /** Update a offer, then return an integer that indicates if the offer was found (1) or not (0). */
-  def update(userId: Long, companyId: Long, beerId: Long): Future[Int] = db
-    .run(offers.filter(e => e.companyId === companyId && e.userId === userId).map(_.beerId).update(Some(beerId)))
+  def update(offer: Offer): Future[Option[Offer]] = db
+    .run(offers.filter(e => e.companyId === offer.companyId && e.clientId === offer.clientId).map(_.beerId).update(offer.beerId)).map {
+    case 0 => None
+    case _ => Some(offer)
+  }
 
   /** Delete a offer, then return an integer that indicates if the offer was found (1) or not (0) */
-  def delete(userId: Long, companyId: Long): Future[Int] = db.run(offers.filter(e => e.companyId === companyId && e.userId === userId).delete)
+  def delete(companyId: Long, clientId: Long): Future[Int] = db.run(offers.filter(e => e.companyId === companyId && e.clientId === clientId).delete)
 }

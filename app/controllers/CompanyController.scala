@@ -62,7 +62,16 @@ class CompanyController @Inject()(cc: ControllerComponents, companyDAO: CompanyD
     }
   }
 
-  def updateCompany(companyId: Long) = Action.async(validateJson[CompanyWithObjects]) { request =>
+  def updateCompany = Action.async(validateJson[CompanyWithObjects]) { request =>
+    if (request.body.id.isEmpty) {
+      import scala.concurrent.Future
+      Future(BadRequest(Json.obj(
+        "status" -> "Bad Request",
+        "message" -> "The field 'id' is missing!"
+      )))
+    }
+
+    val companyId: Long = request.body.id.get
     val schedule: Option[Seq[Option[DailySchedule]]] = request.body.schedules
       .map(schedules => schedules.map(s => Await.result(scheduleController.updateSchedule(s), Duration.Inf)))
 
@@ -72,7 +81,7 @@ class CompanyController @Inject()(cc: ControllerComponents, companyDAO: CompanyD
 
     val results: (Company, Option[Address]) = Await.result(future, Duration.Inf)
 
-    companyDAO.update(companyId, results._1).map {
+    companyDAO.update(results._1).map {
       case Some(_) => Ok(
         Json.obj(
           "status" -> "OK",

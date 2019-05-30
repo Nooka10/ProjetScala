@@ -10,15 +10,23 @@ case class CompanyWithObjects(id: Option[Long], name: String, description: Optio
 
 case class DailySchedule(id: Option[Long], day: DaysEnum.Value, hOpenAM: String, hCloseAM: Option[String], hOpenPM: Option[String], hClosePM: String)
 
+case class Link_Company_Beer(id: Option[Long], companyId: Long, beerId: Long)
+
 case class Link_DailySchedule_Company(id: Option[Long], companyId: Long, dailyScheduleId: Long)
 
-case class Offer(companyId: Long, clientId: Long, beerId: Option[Long])
+case class Offer(companyId: Long, clientId: Long, beerId: Option[Long] = null)
+
+case class OfferWithID(companyId: Long, clientId: Long, beerId: Option[Long] = null, id: Option[Long] = null)
 
 case class OfferWithObjects(company: Company, client: User, beer: Option[Beer])
 
 case class User(id: Option[Long], firstname: String, lastname: String, email: String, password: String, userType: UserTypeEnum.Value, companyId: Option[Long])
 
 case class UserLogin(email: String, password: String)
+
+object OfferWithIDToOffer {
+  def fromOffer(offer:Offer) = OfferWithID(offer.companyId, offer.clientId, offer.beerId)
+}
 
 object CompanyWithObjects {
   def fromCompany(company: Company, address: Address, schedule: Option[Seq[DailySchedule]]): CompanyWithObjects = {

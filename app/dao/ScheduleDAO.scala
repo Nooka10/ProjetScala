@@ -46,7 +46,6 @@ trait ScheduleComponent extends CompanyComponent {
 
     def schedule = foreignKey("SCHEDULE", dailyScheduleId, schedules)(_.id, onDelete = ForeignKeyAction.Cascade)
 
-
     // Map the attributes with the model; the ID is optional.
     def * = (id.?, companyId, dailyScheduleId) <> (Link_DailySchedule_Company.tupled, Link_DailySchedule_Company.unapply)
   }
@@ -112,14 +111,6 @@ class ScheduleDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
 
   /** Delete a schedule, then return an integer that indicates if the LinkScheduleCompany was found (1) or not (0) */
   def delete(scheduleId: Long): Future[Int] = {
-
-    /*
-    val query = for {
-      linkSC <- linkScheduleCompany.filter(_.scheduleId === scheduleId)
-      // schedule <- schedules.filter(_.id === scheduleId).delete if linkSC === 1
-    } yield schedule
-     */
-
-    db.run(linkScheduleCompany.filter(_.dailyScheduleId === scheduleId).delete) // TODO: checker si la foreign key est aussi supprimée
+    db.run(linkScheduleCompany.filter(_.dailyScheduleId === scheduleId).delete)
   }
 }

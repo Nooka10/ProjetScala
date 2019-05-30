@@ -68,7 +68,7 @@ class UserDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)(
   def insert(user: User): Future[User] = db.run(users returning users.map(_.id) into ((user, id) => user.copy(Some(id))) += user)
 
   /** Update a user, then return an integer that indicates if the user was found (1) or not (0). */
-  def update(id: Long, user: User): Future[Option[User]] = db.run(users.filter(_.id === id).update(user.copy(Some(id))).map {
+  def update(user: User): Future[Option[User]] = db.run(users.filter(_.id === user.id).update(user.copy(user.id)).map {
     case 0 => None
     case _ => Some(user)
   })

@@ -74,7 +74,7 @@ class CompanyDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvide
   def insert(company: Company): Future[Company] = db.run(companies returning companies.map(_.id) into ((company, id) => company.copy(Some(id))) += company)
 
   /** Update a company, then return an integer that indicates if the company was found (1) or not (0). */
-  def update(id: Long, company: Company): Future[Option[Company]] = db.run(companies.filter(_.id === id).update(company.copy(Some(id))).map {
+  def update(company: Company): Future[Option[Company]] = db.run(companies.filter(_.id === company.id).update(company.copy(company.id)).map {
     case 0 => None
     case _ => Some(company)
   })

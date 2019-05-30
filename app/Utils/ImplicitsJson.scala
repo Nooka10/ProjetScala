@@ -93,13 +93,13 @@ object ImplicitsJson {
   // ------------------------------------------------------------------------------- Offer -------------------------------------------------------------------------------
   implicit val offerToJson: Writes[Offer] = (
     (JsPath \ "companyId").write[Long] and
-      (JsPath \ "userId").write[Long] and
+      (JsPath \ "clientId").write[Long] and
       (JsPath \ "beerId").writeNullable[Long]
     ) (unlift(Offer.unapply))
 
   implicit val jsonToOffer: Reads[Offer] = (
     (JsPath \ "companyId").read[Long] and
-      (JsPath \ "userId").read[Long] and
+      (JsPath \ "clientId").read[Long] and
       (JsPath \ "beerId").readNullable[Long]
     ) (Offer.apply _)
 
