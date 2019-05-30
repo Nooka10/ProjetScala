@@ -25,7 +25,7 @@ trait CompanyComponent extends AddressComponent {
 
     def image = column[Option[String]]("IMAGE")
 
-    def address = foreignKey("ADDRESS", addressId, addresses)(_.id, onDelete = ForeignKeyAction.Restrict)
+    def address = foreignKey("ADDRESS", addressId, addresses)(_.id)
 
     // Map the attributes with the model; the ID is optional.
     def * = (id.?, name, description, addressId, image) <> (Company.tupled, Company.unapply)

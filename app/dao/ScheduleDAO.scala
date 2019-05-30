@@ -42,7 +42,7 @@ trait ScheduleComponent extends CompanyComponent {
 
     def dailyScheduleId = column[Long]("DAILY_SCHEDULE_ID")
 
-    def company = foreignKey("COMPANY", companyId, companies)(_.id)
+    def company = foreignKey("COMPANY", companyId, companies)(_.id, onDelete = ForeignKeyAction.Cascade)
 
     def schedule = foreignKey("SCHEDULE", dailyScheduleId, schedules)(_.id, onDelete = ForeignKeyAction.Cascade)
 

@@ -28,7 +28,7 @@ trait AddressComponent {
     def lng = column[Double]("LNG")
 
     def lat = column[Double]("LAT")
-    
+
     // Map the attributes with the model; the ID is optional.
     def * = (id.?, no, road, city, postalCode, country, lng, lat) <> (Address.tupled, Address.unapply)
   }
