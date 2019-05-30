@@ -8,7 +8,7 @@ case class Company(id: Option[Long], name: String, description: Option[String], 
 
 case class CompanyWithObjects(id: Option[Long], name: String, description: Option[String], schedules: Option[Seq[DailySchedule]], address: Address, image: Option[String])
 
-case class DailySchedule(id: Option[Long], day: String, hOpenAM: String, hCloseAM: Option[String], hOpenPM: Option[String], hClosePM: String)
+case class DailySchedule(id: Option[Long], day: DaysEnum.Value, hOpenAM: String, hCloseAM: Option[String], hOpenPM: Option[String], hClosePM: String)
 
 case class Link_DailySchedule_Company(id: Option[Long], companyId: Long, dailyScheduleId: Long)
 
@@ -36,4 +36,15 @@ object UserTypeEnum extends Enumeration {
   type userType = Value
   val CLIENT = Value("CLIENT")
   val EMPLOYEE = Value("EMPLOYEE")
+}
+
+object DaysEnum extends Enumeration {
+  type userType = Value
+  val MONDAY = Value("MONDAY")
+  val TUESDAY = Value("TUESDAY")
+  val WEDNESDAY = Value("WEDNESDAY")
+  val THURSDAY = Value("THURSDAY")
+  val FRIDAY = Value("FRIDAY")
+  val SATURDAY = Value("SATURDAY")
+  val SUNDAY = Value("SUNDAY")
 }

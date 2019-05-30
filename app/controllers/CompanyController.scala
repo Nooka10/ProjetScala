@@ -19,8 +19,6 @@ class CompanyController @Inject()(cc: ControllerComponents, companyDAO: CompanyD
 
   def createCompany = Action.async(validateJson[CompanyWithObjects]) { request =>
     val newAddress: Future[Address] = addressController.createAddress(request.body.address)
-    val newSchedule: Option[Future[Seq[DailySchedule]]] = request.body.schedules
-      .map(schedules => Future.sequence(schedules.map(schedule => scheduleController.createSchedule(schedule, request.body.id.get))))
 
     val future: Future[(Company, Address)] = for {
       address <- newAddress
@@ -28,6 +26,7 @@ class CompanyController @Inject()(cc: ControllerComponents, companyDAO: CompanyD
 
     val results: (Company, Address) = Await.result(future, Duration.Inf)
     companyDAO.insert(results._1).map(newCompany => {
+      val newSchedule: Option[Future[Seq[DailySchedule]]] = request.body.schedules.map(schedules => Future.sequence(schedules.map(schedule => scheduleController.createSchedule(schedule, newCompany.id.get))))
       val schedule: Option[Seq[DailySchedule]] = newSchedule.map(seq => Await.result(seq, Duration.Inf))
       val c: CompanyWithObjects = CompanyWithObjects.fromCompany(newCompany, results._2, schedule)
 

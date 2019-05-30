@@ -24,11 +24,11 @@ trait OfferComponent extends CompanyComponent with UserComponent with BeerCompon
 
     def beerId = column[Option[Long]]("BEER_ID")
 
-    def company = foreignKey("COMPANY", companyId, companies)(x => x.id)
+    def company = foreignKey("COMPANY", companyId, companies)(_.id)
 
-    def user = foreignKey("USER", userId, users)(x => x.id)
+    def user = foreignKey("USER", userId, users)(_.id)
 
-    def beer = foreignKey("BEER", beerId, beers)(x => x.id)
+    def beer = foreignKey("BEER", beerId, beers)(_.id)
 
     // Map the attributes with the model; the ID is optional.
     def * = (companyId, userId, beerId) <> (Offer.tupled, Offer.unapply)
@@ -36,7 +36,6 @@ trait OfferComponent extends CompanyComponent with UserComponent with BeerCompon
 
   // Get the object-oriented list of courses directly from the query table.
   lazy val offers = TableQuery[OfferTable]
-  Await.result(db.run(DBIOAction.seq(offers.schema.createIfNotExists)), Duration.Inf) // FIXME: Est-ce possible de créer toutes les tables d'un coup?
 }
 
 // This class contains the object-oriented list of offer and offers methods to query the data.

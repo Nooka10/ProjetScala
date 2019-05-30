@@ -1,7 +1,7 @@
 package dao
 
 import javax.inject.{Inject, Singleton}
-import models.User
+import models.{User, UserTypeEnum}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import scala.concurrent.{ExecutionContext, Future}
 import slick.jdbc.JdbcProfile
@@ -9,11 +9,7 @@ import slick.jdbc.JdbcProfile
 trait UserComponent extends CompanyComponent {
   self: HasDatabaseConfigProvider[JdbcProfile] =>
 
-  import models.UserTypeEnum
   import profile.api._
-  import scala.concurrent.Await
-  import scala.concurrent.duration.Duration
-  import slick.dbio.DBIOAction
 
   implicit lazy val userTypeMapper = MappedColumnType.base[UserTypeEnum.Value, String](
     e => e.toString,
@@ -45,7 +41,6 @@ trait UserComponent extends CompanyComponent {
   
   // Get the object-oriented list of courses directly from the query table.
   lazy val users = TableQuery[UserTable]
-  Await.result(db.run(DBIOAction.seq(users.schema.createIfNotExists)), Duration.Inf) // FIXME: Est-ce possible de créer toutes les tables d'un coup?
 }
 
 // This class contains the object-oriented list of user and offers methods to query the data.

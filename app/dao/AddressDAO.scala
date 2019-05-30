@@ -10,9 +10,6 @@ trait AddressComponent {
   self: HasDatabaseConfigProvider[JdbcProfile] =>
 
   import profile.api._
-  import scala.concurrent.Await
-  import scala.concurrent.duration.Duration
-  import slick.dbio.DBIOAction
   
   // This class convert the database's addresses table in a object-oriented entity: the Address model.
   class AddressTable(tag: Tag) extends Table[Address](tag, "ADDRESS") {
@@ -38,7 +35,6 @@ trait AddressComponent {
   
   // Get the object-oriented list of courses directly from the query table.
   lazy val addresses = TableQuery[AddressTable]
-  Await.result(db.run(DBIOAction.seq(addresses.schema.createIfNotExists)), Duration.Inf) // FIXME: Est-ce possible de créer toutes les tables d'un coup?
 }
 
 // This class contains the object-oriented list of address and offers methods to query the data.

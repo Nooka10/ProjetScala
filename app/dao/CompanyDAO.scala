@@ -3,16 +3,14 @@ package dao
 import javax.inject.{Inject, Singleton}
 import models.{Company, CompanyWithObjects}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, Future}
 import slick.jdbc.JdbcProfile
 
 trait CompanyComponent extends AddressComponent {
   self: HasDatabaseConfigProvider[JdbcProfile] =>
 
   import profile.api._
-  import scala.concurrent.Await
-  import scala.concurrent.duration.Duration
-  import slick.dbio.DBIOAction
 
   // This class convert the database's companys table in a object-oriented entity: the Company model.
   class CompanyTable(tag: Tag) extends Table[Company](tag, "COMPANY") {
@@ -27,7 +25,7 @@ trait CompanyComponent extends AddressComponent {
 
     def image = column[Option[String]]("IMAGE")
 
-    def address = foreignKey("ADDRESS", addressId, addresses)(x => x.id, onDelete = ForeignKeyAction.Cascade)
+    def address = foreignKey("ADDRESS", addressId, addresses)(_.id, onDelete = ForeignKeyAction.Restrict)
 
     // Map the attributes with the model; the ID is optional.
     def * = (id.?, name, description, addressId, image) <> (Company.tupled, Company.unapply)
@@ -35,7 +33,6 @@ trait CompanyComponent extends AddressComponent {
 
   // Get the object-oriented list of courses directly from the query table.
   lazy val companies = TableQuery[CompanyTable]
-  Await.result(db.run(DBIOAction.seq(companies.schema.createIfNotExists)), Duration.Inf) // FIXME: Est-ce possible de créer toutes les tables d'un coup?
 }
 
 // This class contains the object-oriented list of company and offers methods to query the data.
@@ -47,33 +44,30 @@ class CompanyDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvide
   extends CompanyComponent with AddressComponent with ScheduleComponent with HasDatabaseConfigProvider[JdbcProfile] {
 
   import profile.api._
-  import scala.collection.immutable
 
   /** Retrieve a company from the id. */
   def findById(id: Long): Future[Option[CompanyWithObjects]] = {
     val query = for {
       company <- companies if company.id === id
       address <- company.address
-      linkSC <- linkScheduleCompany if linkSC.companyId === company.id
-      schedule <- linkSC.schedule
-    } yield (company, address, schedule)
+    } yield (company, address)
 
-    db.run(query.result).map(e => e.groupBy(x => (x._1, x._2)).map {
-      case ((comp, addr), seq) => CompanyWithObjects.fromCompany(comp, addr, Some(seq.map(_._3)))
-    }.headOption)
+    db.run(query.result.headOption)
+      .map(option => option
+        .map(tuple => CompanyWithObjects
+          .fromCompany(tuple._1, tuple._2, Some(Await.result(scheduleDAO.findAllDailySchedulesFromCompanyId(tuple._1.id.get), Duration.Inf)))))
   }
 
-  def find: Future[immutable.Iterable[CompanyWithObjects]] = {
+  def find: Future[Seq[CompanyWithObjects]] = {
     val query = for {
       company <- companies
       address <- company.address
-      linkSC <- linkScheduleCompany if linkSC.companyId === company.id
-      schedule <- linkSC.schedule
-    } yield (company, address, schedule)
+    } yield (company, address)
 
-    db.run(query.result).map(e => e.groupBy(x => (x._1, x._2)).map {
-      case ((comp, addr), seq) => CompanyWithObjects.fromCompany(comp, addr, Some(seq.map(_._3)))
-    })
+    db.run(query.result)
+      .map(sec => sec
+        .map(tuple => CompanyWithObjects
+          .fromCompany(tuple._1, tuple._2, Some(Await.result(scheduleDAO.findAllDailySchedulesFromCompanyId(tuple._1.id.get), Duration.Inf)))))
   }
 
   /** Insert a new course, then return it. */

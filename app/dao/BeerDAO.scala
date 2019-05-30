@@ -32,7 +32,6 @@ trait BeerComponent {
 
   // Get the object-oriented list of courses directly from the query table.
   lazy val beers = TableQuery[BeerTable]
-  Await.result(db.run(DBIOAction.seq(beers.schema.createIfNotExists)), Duration.Inf) // FIXME: Est-ce possible de créer toutes les tables d'un coup?
 }
 
 // This class contains the object-oriented list of beer and offers methods to query the data.

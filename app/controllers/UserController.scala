@@ -77,7 +77,7 @@ class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO, offe
     val optionalUser: Future[Option[User]] = usersDAO.findById(userId)
 
     optionalUser.map {
-      case Some(c) => Ok(Json.toJson(c.copy(password = null))) // on supprime le password pour ne pas le retourner
+      case Some(c) => Ok(Json.toJson(c)) // on supprime le password pour ne pas le retourner
       case None =>
         NotFound(Json.obj(
           "status" -> "Not Found",
@@ -134,7 +134,7 @@ class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO, offe
 
 
   def getUserOffers(userId: Long) = Action.async {
-    offersDAO.findAllOffersOfUser(userId).map(employee => Ok(Json.toJson(employee)))
+    offersDAO.findAllOffersOfUser(userId).map(offers => Ok(Json.toJson(offers)))
   }
 
   /*
