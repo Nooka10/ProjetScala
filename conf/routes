@@ -1,0 +1,49 @@
+
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# An example controller showing a sample home page
+GET           /                                          controllers.HomeController.index
+
+# Map static resources from the /public folder to the /assets URL path
+GET           /assets/*file                              controllers.Assets.versioned(path="/public", file: Asset)
+
+# REST API endpoints
+# -------------------------------------------------------------- USER ENDPOINTS --------------------------------------------------------------
+POST          /register                                  controllers.UserController.createUser
+POST          /login                                     controllers.UserController.login
+GET           /users/:id                                 controllers.UserController.getUser(id: Long)
+PUT           /users                                     controllers.UserController.updateUser
+DELETE        /users/:id                                 controllers.UserController.deleteUser(id: Long)
+
+# -------------------------------------------------------------- USER'S OFFERS ENDPOINTS --------------------------------------------------------------
+GET           /users/:id/offers                          controllers.UserController.getAllOffersOfUser(id: Long)
+GET           /users/:id/offers/used                     controllers.UserController.getAllConsumedOffersOfUser(id: Long)
+GET           /users/:id/offers/unused                   controllers.UserController.getAllUnusedOffersOfUser(id: Long)
+POST          /useOffer                                  controllers.UserController.useOffer
+
+# -------------------------------------------------------------- COMPANY ENDPOINTS --------------------------------------------------------------
+POST          /companies                                 controllers.CompanyController.createCompany
+GET           /companies                                 controllers.CompanyController.getCompanies
+GET           /companies/:id                             controllers.CompanyController.getCompany(id: Long)
+GET           /companies/:id/employees                   controllers.CompanyController.getEmployees(id: Long)
+PUT           /companies                                 controllers.CompanyController.updateCompany
+DELETE        /companies/:id                             controllers.CompanyController.deleteCompany(id: Long)
+
+# -------------------------------------------------------------- COMPANY'S BEERS ENDPOINTS --------------------------------------------------------------
+GET           /companies/:companyId/beers                controllers.BeerController.getAllBeersOfCompany(companyId: Long)
+GET           /companies/:companyId/beers/:beerId        controllers.BeerController.getOneBeersOfCompany(companyId: Long, beerId: Long)
+POST          /companies/:companyId/beers/:beerId        controllers.BeerController.addBeerToDrinkListOfCompany(companyId: Long, beerId: Long)
+DELETE        /companies/:companyId/beers/:beerId        controllers.BeerController.removeBeerFromDrinkListOfCompany(companyId: Long, beerId: Long)
+
+# -------------------------------------------------------------- BEER ENDPOINTS --------------------------------------------------------------
+GET           /beers                                     controllers.BeerController.getBeers
+GET           /beers/:id                                 controllers.BeerController.getBeer(id: Long)
+POST          /beers                                     controllers.BeerController.createBeer
+PUT           /beers                                     controllers.BeerController.updateBeer
+DELETE        /beers/:id                                 controllers.BeerController.deleteBeer(id: Long)
+
+# -------------------------------------------------------------- STATS ENDPOINTS --------------------------------------------------------------
+GET           /stats/mostPopularCompany                  controllers.StatsController.getMostPopularCompany
+GET           /stats/getMostFamousBeer                   controllers.StatsController.getMostFamousBeer

@@ -1,32 +1,55 @@
-Etablissement: {
+Client: {
 	id: id!
-	nom: string!
+	firstname: string!
+	lastname: string!
+	email: string!
+	password: string!
+	offers: [Offre!]!
+}
+
+Barmen: {
+	id: id!
+	firstname: string!
+	lastname: string!
+	email: string!
+	password: string!
+	companyId: id! # id du bar ou de la brasserie dont il est employé
+}
+
+Company: {
+	id: id!
+	name: string!
 	description: string
-	horaires: [Horaires!] # max 7 éléments, pas 2 fois le même jour
-	adresse: Adresse!
-	bieres: [biere!]!
+	schedules: [Schedules!] # max 7 éléments, pas 2 fois le même jour
+	address: Address!
+	beers: [Beer!]!
 	image: img
 }
 
-Horaire: {
-	jour: enum! #LUNDI, MARDI, MERCREDI, ...., DIMANCHE
-	hOuvFerm: [(heure ouv., heure ferm.)] # min 1 élément, max 3 éléments
+Schedules: {
+	day: enum! #LUNDI, MARDI, MERCREDI, ...., DIMANCHE
+	hOpCl: [(heure ouv., heure ferm.)] # min 1 élément, max 3 éléments
 }
 
-Biere: {
-	nom: string!
-	marque: string!
-	prix: number!
-	degreAlcool: number!
+Beer: {
+	name: string!
+	brand: string!
+	price: number!
+	degreeAlcohol: number!
 	image: img
 }
 
-Adresse: {
+Address: {
 	no: string!
-	chemin: string!
-	ville: string!
-	noPostal: number!
-	pays: string!
+	road: string!
+	city: string!
+	postalCode: number!
+	country: string!
 	lng: number!
 	lat: number!
+}
+
+Offer: {
+	id: id!
+	idCompany: id! # id du bar ou de la brasserie où le client peut utiliser son bon
 }
