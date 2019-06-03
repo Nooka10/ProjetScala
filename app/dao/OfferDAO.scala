@@ -116,7 +116,7 @@ class OfferDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
 
   /** Update a offer, then return an integer that indicates if the offer was found (1) or not (0). */
   def update(offer: Offer): Future[Option[Offer]] = {
-    db.run(offers.filter(e => e.companyId === offer.companyId && e.clientId === offer.clientId && offer.beerId.isEmpty).map(_.beerId).update(offer.beerId)).map {
+    db.run(offers.filter(e => e.companyId === offer.companyId && e.clientId === offer.clientId && e.beerId.isEmpty).map(_.beerId).update(offer.beerId)).map {
       case 0 => None
       case _ => Some(offer)
     }
