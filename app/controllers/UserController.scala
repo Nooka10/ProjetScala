@@ -38,7 +38,7 @@ class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO, offe
                 "status" -> "OK",
                 "id" -> newUser.id,
                 "message" -> ("User '" + newUser.firstname + " " + newUser.lastname + "' saved."),
-                "user infos" -> newUser,
+                "userInfos" -> newUser,
                 "token" -> tokenController.createConnectionToken(newUser)
               )))
           } else { // le nouvel utilisateur est un employé (il n'a donc pas d'offres)
@@ -46,7 +46,7 @@ class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO, offe
               "status" -> "OK",
               "id" -> newUser.id,
               "message" -> ("User '" + newUser.firstname + " " + newUser.lastname + "' saved."),
-              "user infos" -> newUser,
+              "userInfos" -> newUser,
               "token" -> tokenController.createConnectionToken(newUser)
             )))
           }
@@ -73,7 +73,7 @@ class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO, offe
               "status" -> "OK",
               "id" -> userInDB.id,
               "message" -> "You are now logged in.",
-              "user infos" -> userInDB,
+              "userInfos" -> userInDB,
               "token" -> tokenController.createConnectionToken(userInDB)
             )))
       } else { // passwords doesn't match
@@ -123,7 +123,7 @@ class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO, offe
               Json.obj(
                 "status" -> "OK",
                 "message" -> ("User '" + user.firstname + " " + user.lastname + "' updated."),
-                "user info updated" -> user
+                "userInfo" -> user
               )
             )
             case None => NotFound(Json.obj(

@@ -21,7 +21,7 @@ class BeerController @Inject()(cc: ControllerComponents, beerDAO: BeerDAO) exten
         "status" -> "OK",
         "id" -> beer.id,
         "message" -> ("The beer named '" + beer.name + "' has been saved."),
-        "beer infos" -> beer,
+        "beerInfos" -> beer,
       )
     ))
   }
@@ -47,8 +47,8 @@ class BeerController @Inject()(cc: ControllerComponents, beerDAO: BeerDAO) exten
       Json.obj(
         "status" -> "OK",
         "message" -> ("The beer #" + beerId + " has been added to the drink list of the company #" + companyId + "."),
-        "beer infos" -> result._2,
-        "company infos" -> result._1,
+        "beerInfos" -> result._2,
+        "companyInfos" -> result._1,
       )
     ))
   }
@@ -84,7 +84,7 @@ class BeerController @Inject()(cc: ControllerComponents, beerDAO: BeerDAO) exten
           Json.obj(
             "status" -> "OK",
             "message" -> ("Beer '" + beer.name + "' updated."),
-            "beer info updated" -> beer
+            "beerInfo updated" -> beer
           )
         )
         case None => NotFound(Json.obj(

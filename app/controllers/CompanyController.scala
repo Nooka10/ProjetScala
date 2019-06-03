@@ -35,7 +35,7 @@ class CompanyController @Inject()(cc: ControllerComponents, companyDAO: CompanyD
           "status" -> "OK",
           "id" -> c.id,
           "message" -> ("The company named '" + c.name + "' has been saved."),
-          "company infos" -> c,
+          "companyInfos" -> c,
         )
       )
     })
@@ -45,7 +45,7 @@ class CompanyController @Inject()(cc: ControllerComponents, companyDAO: CompanyD
     companyDAO.find.map(companies => Ok(
       Json.obj(
         "status" -> "OK",
-        "companies infos" -> companies,
+        "companiesInfos" -> companies,
       )))
   }
 
@@ -86,7 +86,7 @@ class CompanyController @Inject()(cc: ControllerComponents, companyDAO: CompanyD
         Json.obj(
           "status" -> "OK",
           "message" -> ("The company named '" + request.body.name + "' has been updated."),
-          "company info updated" -> request.body
+          "companyInfo" -> request.body
         )
       )
       case None => NotFound(Json.obj(
