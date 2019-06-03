@@ -175,13 +175,11 @@ class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO, offe
     } else {
       usersDAO.findById(request.body.clientId).map {
         case Some(_) => Await.result(offersDAO.update(request.body).map(newOffer => Ok(Json.toJson(newOffer))), Duration.Inf)
-        case None => NotFound(Json.obj(
-          "status" -> "Not Found",
-          "message" -> ("User #" + request.body.clientId + " not found.")
+        case None => Unauthorized(Json.obj(
+          "status" -> "Not Found or already used",
+          "message" -> "This offer has not been found or has already been used by the client."
         ))
       }
     }
   }
 }
-
-// TODO: Comment dockeriser un projet scala ?

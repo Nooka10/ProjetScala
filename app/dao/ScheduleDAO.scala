@@ -87,7 +87,6 @@ class ScheduleDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
 
   /** Insert a new schedule, then return it. */
   def insert(schedule: DailySchedule, companyId: Long): Future[DailySchedule] = {
-    // FIXME: C'est correct de faire ça??
     val query = for {
       schedule <- schedules returning schedules.map(_.id) into ((schedule, id) => schedule.copy(Some(id))) += schedule
       _ <- linkScheduleCompany returning linkScheduleCompany.map(_.id) into ((LinkScheduleCompany, id) => LinkScheduleCompany.copy(Some(id))) +=

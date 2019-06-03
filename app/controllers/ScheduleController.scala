@@ -7,7 +7,6 @@ import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import Utils.ImplicitsJson._
 
 @Singleton
 class ScheduleController @Inject()(cc: ControllerComponents, scheduleDAO: ScheduleDAO) extends AbstractController(cc) {
@@ -20,7 +19,14 @@ class ScheduleController @Inject()(cc: ControllerComponents, scheduleDAO: Schedu
 
   def getScheduleFromCompanyId(companyId: Long): Future[Seq[DailySchedule]] = scheduleDAO.findAllDailySchedulesFromCompanyId(companyId)
 
-  def updateSchedule(schedule: DailySchedule): Future[Option[DailySchedule]] = scheduleDAO.update(schedule)
+  def updateSchedule(schedules: Option[Seq[DailySchedule]], companyId: Long): Option[Future[Seq[DailySchedule]]] = {
+    schedules.map(schedules => Future.sequence(schedules.map {
+      case schedule if schedule.id.isEmpty => createSchedule(schedule, companyId)
+      case schedule => scheduleDAO.update(schedule).map {
+        case Some(s: DailySchedule) => s
+      }
+    }))
+  }
 
   def deleteSchedule(scheduleId: Long): Future[Int] = scheduleDAO.delete(scheduleId)
   // FIXME: Pourquoi supprimer une company supprime le link_daily_schedule_company mais pas le daily_schedule correspondant?

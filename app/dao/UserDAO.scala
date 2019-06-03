@@ -75,6 +75,4 @@ class UserDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)(
 
   /** Delete a user, then return an integer that indicates if the user was found (1) or not (0) */
   def delete(id: Long): Future[Int] = db.run(users.filter(_.id === id).delete)
-
-  // TODO: ajouter une méthode pour reset les offres + un autre pour indiquer qu'une offre a été consommée
 }

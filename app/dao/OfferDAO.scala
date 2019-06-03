@@ -1,15 +1,15 @@
 package dao
 
 import javax.inject.{Inject, Singleton}
-import models.Offer
+import models._
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
+import play.api.libs.json.Json
 import scala.concurrent.{ExecutionContext, Future}
 import slick.jdbc.JdbcProfile
 
 trait OfferComponent extends CompanyComponent with UserComponent with BeerComponent {
   self: HasDatabaseConfigProvider[JdbcProfile] =>
 
-  import models.OfferWithID
   import profile.api._
 
   // This class convert the database's offers table in a object-oriented entity: the Offer model.
@@ -46,7 +46,6 @@ trait OfferComponent extends CompanyComponent with UserComponent with BeerCompon
 class OfferDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)(implicit executionContext: ExecutionContext)
   extends OfferComponent with HasDatabaseConfigProvider[JdbcProfile] {
 
-  import models.{Beer, Company, OfferWithIDToOffer, OfferWithObjects, User, UserTypeEnum}
   import profile.api._
 
   /** Retrieve an offer from his companyId and clientId. */
@@ -93,6 +92,15 @@ class OfferDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
     db.run(query.result).map(_.map(offer => OfferWithObjects(offer._1, offer._2, offer._3)))
   }
 
+  def createOffersForNewCompany(companyId: Long) = {
+    val query = for {
+      user <- users if user.userType === UserTypeEnum.CLIENT
+    } yield user
+
+    val offers = query.result.map(users => Future.sequence(users.map(user => insert(Offer(companyId, user.id.get)))))
+    db.run(offers).flatten // permet de passer d'une Future[Future[...]] à une Future[...]
+  }
+
   def createAllOffersForNewUser(clientId: Long) = {
     val query = for {
       company <- companies
@@ -107,10 +115,11 @@ class OfferDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
     .map(o => Offer(o.companyId, o.clientId, o.beerId))
 
   /** Update a offer, then return an integer that indicates if the offer was found (1) or not (0). */
-  def update(offer: Offer): Future[Option[Offer]] = db
-    .run(offers.filter(e => e.companyId === offer.companyId && e.clientId === offer.clientId).map(_.beerId).update(offer.beerId)).map {
-    case 0 => None
-    case _ => Some(offer)
+  def update(offer: Offer): Future[Option[Offer]] = {
+    db.run(offers.filter(e => e.companyId === offer.companyId && e.clientId === offer.clientId && offer.beerId.isEmpty).map(_.beerId).update(offer.beerId)).map {
+      case 0 => None
+      case _ => Some(offer)
+    }
   }
 
   /** Delete a offer, then return an integer that indicates if the offer was found (1) or not (0) */
@@ -118,25 +127,21 @@ class OfferDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
 
   def getMostPopularCompany = {
     val query = (for {
-      //(offer, count) <- offers join companies.groupBy(_.id).map({ case (_, group) => group.map(_.id).max }) on ((offer, _) => offer.beerId.nonEmpty)
       offer <- offers if offer.beerId.nonEmpty
       company <- offer.company
     } yield (offer, company)).groupBy(_._2.id).map {
       case (companyId, offersCompany) => (companyId, offersCompany.length)
-    } // FIXME: comment faire pour récupérer juste le tuple avec le plus grand _.2 ?
-
-    db.run(query.result)
+    }.sortBy(_._2.desc).take(1)
+    db.run(query.result.head)
   }
 
   def getMostFamousBeer = {
     val query = (for {
-      //(offer, count) <- offers join companies.groupBy(_.id).map({ case (_, group) => group.map(_.id).max }) on ((offer, _) => offer.beerId.nonEmpty)
       offer <- offers if offer.beerId.nonEmpty
       beer <- offer.beer
     } yield (offer, beer)).groupBy(_._2.id).map {
       case (beerId, offersCompany) => (beerId, offersCompany.length)
-    } // FIXME: comment faire pour récupérer juste le tuple avec le plus grand _.2 ?
-
-    db.run(query.result)
+    }.sortBy(_._2.desc).take(1)
+    db.run(query.result.head)
   }
 }

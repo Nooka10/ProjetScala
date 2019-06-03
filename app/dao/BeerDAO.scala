@@ -1,7 +1,7 @@
 package dao
 
 import javax.inject.{Inject, Singleton}
-import models.Beer
+import models.{Beer, Link_Company_Beer}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import scala.concurrent.{ExecutionContext, Future}
 import slick.jdbc.JdbcProfile
@@ -9,7 +9,6 @@ import slick.jdbc.JdbcProfile
 trait BeerComponent extends CompanyComponent {
   self: HasDatabaseConfigProvider[JdbcProfile] =>
 
-  import models.Link_Company_Beer
   import profile.api._
 
   // This class convert the database's beers table in a object-oriented entity: the Beer model.
@@ -96,8 +95,6 @@ class BeerDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)(
   }
 
   def addBeerToDrinkListOfCompany(companyId: Long, beerId: Long) = {
-    import models.Link_Company_Beer
-    // FIXME: C'est correct de faire ça??
     val query = for {
       beer <- beers if beer.id === beerId
       company <- companies if company.id === companyId

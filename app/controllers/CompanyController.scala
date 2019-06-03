@@ -1,6 +1,6 @@
 package controllers
 
-import dao.{CompanyDAO, UserDAO}
+import dao.{CompanyDAO, OfferDAO, UserDAO}
 import javax.inject.{Inject, Singleton}
 import models.{Address, Company, CompanyWithObjects, DailySchedule}
 import play.api.libs.json._
@@ -11,7 +11,7 @@ import scala.concurrent.{Await, Future}
 import Utils.ImplicitsJson._
 
 @Singleton
-class CompanyController @Inject()(cc: ControllerComponents, companyDAO: CompanyDAO, addressController: AddressController, scheduleController: ScheduleController, userDAO: UserDAO) extends AbstractController(cc) {
+class CompanyController @Inject()(cc: ControllerComponents, companyDAO: CompanyDAO, addressController: AddressController, scheduleController: ScheduleController, userDAO: UserDAO, offerDAO: OfferDAO) extends AbstractController(cc) {
 
   def validateJson[A: Reads] = parse.json.validate(
     _.validate[A].asEither.left.map(e => BadRequest(JsError.toJson(e)))
@@ -26,6 +26,7 @@ class CompanyController @Inject()(cc: ControllerComponents, companyDAO: CompanyD
 
     val results: (Company, Address) = Await.result(future, Duration.Inf)
     companyDAO.insert(results._1).map(newCompany => {
+      Await.result(offerDAO.createOffersForNewCompany(newCompany.id.get), Duration.Inf) // Pour chaque client, on ajoute une offre pour cette nouvelle companie
       val newSchedule: Option[Future[Seq[DailySchedule]]] = request.body.schedules.map(schedules => Future.sequence(schedules.map(schedule => scheduleController.createSchedule(schedule, newCompany.id.get))))
       val schedule: Option[Seq[DailySchedule]] = newSchedule.map(seq => Await.result(seq, Duration.Inf))
       val c: CompanyWithObjects = CompanyWithObjects.fromCompany(newCompany, results._2, schedule)
@@ -50,7 +51,7 @@ class CompanyController @Inject()(cc: ControllerComponents, companyDAO: CompanyD
   }
 
   def getCompany(companyId: Long) = Action.async {
-    val optionalCompany = companyDAO.findById(companyId)
+    val optionalCompany: Future[Option[CompanyWithObjects]] = companyDAO.findById(companyId)
 
     optionalCompany.map {
       case Some(c) => Ok(Json.toJson(c))
@@ -72,8 +73,8 @@ class CompanyController @Inject()(cc: ControllerComponents, companyDAO: CompanyD
     }
 
     val companyId: Long = request.body.id.get
-    val schedule: Option[Seq[Option[DailySchedule]]] = request.body.schedules
-      .map(schedules => schedules.map(s => Await.result(scheduleController.updateSchedule(s), Duration.Inf)))
+    val schedule: Option[Seq[DailySchedule]] = request.body.schedules
+    scheduleController.updateSchedule(schedule, companyId)
 
     val future: Future[(Company, Option[Address])] = for {
       address <- addressController.updateAddress(request.body.address)
