@@ -146,13 +146,15 @@ class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO, offe
         userToUpdate.password.isBcryptedSafe(userInDB.password).map {
           // le mot de passe reçu est correct -> on met l'utilisateur à jour
           case true => Await.result(usersDAO.update(userToUpdate).map {
-            case Some(user) => Ok(
-              Json.obj(
-                "status" -> "OK",
-                "message" -> ("User '" + user.firstname + " " + user.lastname + "' updated."),
-                "userInfo" -> user.copy(password = null)
+            case Some(user) =>
+              val userWithoutPwd = user.copy(password = null)
+              Ok(
+                Json.obj(
+                  "status" -> "OK",
+                  "message" -> ("User '" + user.firstname + " " + user.lastname + "' updated."),
+                  "userInfo" -> userWithoutPwd
+                )
               )
-            )
           }, Duration.Inf)
           // le mot de passe reçu n'est pas correct -> on ne met pas l'utilisateur à jour
           case false => Unauthorized(Json.obj(
