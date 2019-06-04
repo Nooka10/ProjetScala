@@ -10,8 +10,8 @@ trait AddressComponent {
   self: HasDatabaseConfigProvider[JdbcProfile] =>
 
   import profile.api._
-  
-  // This class convert the database's addresses table in a object-oriented entity: the Address model.
+
+  // This class convert the database's address table in a object-oriented entity: the Address model.
   class AddressTable(tag: Tag) extends Table[Address](tag, "ADDRESS") {
     def id = column[Long]("ID", O.PrimaryKey, O.AutoInc) // Primary key, auto-incremented
 
@@ -47,18 +47,42 @@ class AddressDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvide
 
   import profile.api._
 
-  /** Retrieve a address from the id. */
+  /**
+    * Retourne l'addresse correspondante à l'id reçu en paramètre.
+    *
+    * @param id , l'id de l'addresse à retourner.
+    *
+    * @return l'adresse correspondante à l'id reçu en paramètre.
+    */
   def findById(id: Long): Future[Option[Address]] = db.run(addresses.filter(_.id === id).result.headOption)
 
-  /** Insert a new course, then return it. */
+  /**
+    * Enregistre la nouvelle addresse reçue en paramètre.
+    *
+    * @param address , l'addresse à enregistrer dans la BDD.
+    *
+    * @return l'addresse enregistrée
+    */
   def insert(address: Address): Future[Address] = db.run(addresses returning addresses.map(_.id) into ((address, id) => address.copy(Some(id))) += address)
 
-  /** Update a address, then return an integer that indicates if the address was found (1) or not (0). */
-  def update(address: Address) = db.run(addresses.filter(_.id === address.id).update(address.copy(address.id)).map{
+  /**
+    * Met à jour l'addresse reçue en paramètre.
+    *
+    * @param address , l'addresse à mettre à jour.
+    *
+    * @return l'addresse mise à jour.
+    */
+  def update(address: Address): Future[Option[Address]] = db.run(addresses.filter(_.id === address.id).update(address.copy(address.id)).map{
     case 0 => None
     case _ => Some(address)
   })
 
-  /** Delete a address, then return an integer that indicates if the address was found (1) or not (0) */
+  /**
+    * Supprime l'addresse correspondant à l'id reçu en paramètre.
+    *
+    * @param id , l'id de l'addresse à supprimer.
+    *
+    * @return 1 si l'addresse a bien été supprimée, 0 si l'id ne correspond à aucune addresse dans la BDD.
+    */
   def delete(id: Long): Future[Int] = db.run(addresses.filter(_.id === id).delete)
 }

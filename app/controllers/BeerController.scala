@@ -7,6 +7,7 @@ import models.Beer
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 @Singleton
 class BeerController @Inject()(cc: ControllerComponents, beerDAO: BeerDAO) extends AbstractController(cc) {
@@ -15,6 +16,11 @@ class BeerController @Inject()(cc: ControllerComponents, beerDAO: BeerDAO) exten
     _.validate[A].asEither.left.map(e => BadRequest(JsError.toJson(e)))
   )
 
+  /**
+    * Enregistre la nouvelle bière reçue dans le body de la requête.
+    *
+    * @return Ok() / BadRequest()
+    */
   def createBeer = Action.async(validateJson[Beer]) { request =>
     beerDAO.insert(request.body).map(beer => Ok(
       Json.obj(
@@ -26,22 +32,57 @@ class BeerController @Inject()(cc: ControllerComponents, beerDAO: BeerDAO) exten
     ))
   }
 
+  /**
+    * Retourne toutes les bières présentes dans la BDD.
+    *
+    * @return Ok()
+    */
   def getBeers = Action.async {
     beerDAO.find.map(beers => Ok(Json.toJson(beers)))
   }
 
+  /**
+    * Retourne toutes les bières que propose la companie correspondant à l'id reçu en paramètre.
+    *
+    * @param companyId , l'id de la company dont on souhaite récupérer la liste de boissons proposées.
+    *
+    * @return Ok()
+    */
   def getAllBeersOfCompany(companyId: Long) = Action.async {
     beerDAO.getAllBeersOfCompany(companyId).map(beers => Ok(Json.toJson(beers)))
   }
 
+  /**
+    * Retourne la bière correspondante à l'id reçu en paramètre.
+    *
+    * @param beerId , l'id de la bière que l'on souhaite récupérer.
+    *
+    * @return Ok()
+    */
   def getBeer(beerId: Long) = Action.async {
     beerDAO.findById(beerId).map(beer => Ok(Json.toJson(beer)))
   }
 
+  /**
+    * Retourne la bières proposée par la companie correspondant au companyId reçu en paramètre et correspondant au beerId reçu.
+    *
+    * @param companyId , l'id de la company dont on souhaite récupérer une bière de la liste de boissons proposées.
+    * @param beerId    , l'id de la bière que l'on souhaite récupérer.
+    *
+    * @return Ok()
+    */
   def getOneBeersOfCompany(companyId: Long, beerId: Long) = Action.async {
     beerDAO.getOneBeerOfCompany(companyId, beerId).map(beers => Ok(Json.toJson(beers)))
   }
 
+  /**
+    * Ajoute la bière avec l'id beerId à la liste des boissons proposées par la company avec l'id companyId.
+    *
+    * @param companyId , l'id de la company pour laquelle on souhaite ajouter une boisson à la liste de boissons proposées.
+    * @param beerId    , l'id de la bière que l'on souhaite ajouter à la liste de boissons proposées par la company.
+    *
+    * @return Ok()
+    */
   def addBeerToDrinkListOfCompany(companyId: Long, beerId: Long) = Action.async {
     beerDAO.addBeerToDrinkListOfCompany(companyId, beerId).map(result => Ok(
       Json.obj(
@@ -53,6 +94,14 @@ class BeerController @Inject()(cc: ControllerComponents, beerDAO: BeerDAO) exten
     ))
   }
 
+  /**
+    * Supprime la bière avec l'id beerId de la liste des boissons proposées par la company avec l'id companyId.
+    *
+    * @param companyId , l'id de la company pour laquelle on souhaite supprimer une boisson de la liste de boissons proposées.
+    * @param beerId    ,l'id de la bière que l'on souhaite supprimer de la liste de boissons proposées par la company.
+    *
+    * @return Ok() / NotFound()
+    */
   def removeBeerFromDrinkListOfCompany(companyId: Long, beerId: Long) = Action.async {
     beerDAO.removeBeerFromDrinkListOfCompany(companyId, beerId).map {
       case 1 => Ok(
@@ -68,10 +117,14 @@ class BeerController @Inject()(cc: ControllerComponents, beerDAO: BeerDAO) exten
     }
   }
 
+  /**
+    * Met à jour la bières reçue dans le body de la requête.
+    *
+    * @return Ok() / BadRequest() / NotFound()
+    */
   def updateBeer = Action.async(validateJson[Beer]) {
     request =>
       if (request.body.id.isEmpty) {
-        import scala.concurrent.Future
         Future(BadRequest(Json.obj(
           "status" -> "Bad Request",
           "message" -> "The field 'id' is missing!"
@@ -94,6 +147,13 @@ class BeerController @Inject()(cc: ControllerComponents, beerDAO: BeerDAO) exten
       }
   }
 
+  /**
+    * Supprime la bières correspondant à l'id reçu.
+    *
+    * @param beerId , l'id de la bière que l'on souhaite supprimer.
+    *
+    * @return Ok() / NotFound()
+    */
   def deleteBeer(beerId: Long) = Action.async {
     beerDAO.delete(beerId).map {
       case 1 => Ok(

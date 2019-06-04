@@ -65,7 +65,13 @@ class ScheduleDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
 
   import profile.api._
 
-  /** Retrieve all daily schedules of a company from the companyId. */
+  /**
+    * Retourne tous les schedules de la company correspondante à l'id reçu en paramètre.
+    *
+    * @param companyId , l'id de la company dont on souhaite récupérer les schedules.
+    *
+    * @return tous les schedules de la company correspondante à l'id reçu en paramètre.
+    */
   def findAllDailySchedulesFromCompanyId(companyId: Long): Future[Seq[DailySchedule]] = {
     val query = for {
       linkSC <- linkScheduleCompany if linkSC.companyId === companyId
@@ -75,17 +81,14 @@ class ScheduleDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
     db.run(query.result)
   }
 
-  /** Retrieve the daily schedules of a company from the companyId and the day. */
-  def findDailySchedulesFromCompanyIdAndDay(companyId: Long, day: DaysEnum.Value): Future[Option[DailySchedule]] = {
-    val query = for {
-      linkSC <- linkScheduleCompany if linkSC.companyId === companyId
-      schedule <- linkSC.schedule if schedule.day === day
-    } yield schedule
-
-    db.run(query.result.headOption)
-  }
-
-  /** Insert a new schedule, then return it. */
+  /**
+    * Enregistre le schedule reçu en paramètre et le link avec la company dont l'id est celui reçu en paramètre.
+    *
+    * @param schedule  , le schedule à enregistrer.
+    * @param companyId , la company avec laquelle relier le nouveau schedule.
+    *
+    * @return le schedule enregistré.
+    */
   def insert(schedule: DailySchedule, companyId: Long): Future[DailySchedule] = {
     val query = for {
       schedule <- schedules returning schedules.map(_.id) into ((schedule, id) => schedule.copy(Some(id))) += schedule
@@ -96,7 +99,13 @@ class ScheduleDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
     db.run(query)
   }
 
-  /** Update a schedule. */
+  /**
+    * Met à jour le schedule reçus en paramètres.
+    *
+    * @param schedule , le schedule à mettre à jour.
+    *
+    * @return le schedule mis à jour.
+    */
   def update(schedule: DailySchedule): Future[Option[DailySchedule]] = {
     val query = for {
       schedule <- schedules.filter(_.id === schedule.id).update(schedule)
@@ -108,7 +117,13 @@ class ScheduleDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
     }
   }
 
-  /** Delete a schedule, then return an integer that indicates if the LinkScheduleCompany was found (1) or not (0) */
+  /**
+    * Supprime le schedule correspondant à l'id reçu en paramètre.
+    *
+    * @param scheduleId , l'id du schedule à supprimer.
+    *
+    * @return 1 si le schedule a bien été supprimée, 0 si l'id ne correspond à aucun schedule dans la BDD.
+    */
   def delete(scheduleId: Long): Future[Int] = {
     db.run(linkScheduleCompany.filter(_.dailyScheduleId === scheduleId).delete)
   }

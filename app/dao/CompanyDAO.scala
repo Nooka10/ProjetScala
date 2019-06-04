@@ -12,7 +12,7 @@ trait CompanyComponent extends AddressComponent {
 
   import profile.api._
 
-  // This class convert the database's companys table in a object-oriented entity: the Company model.
+  // This class convert the database's company table in a object-oriented entity: the Company model.
   class CompanyTable(tag: Tag) extends Table[Company](tag, "COMPANY") {
 
     def id = column[Long]("ID", O.PrimaryKey, O.AutoInc) // Primary key, auto-incremented
@@ -45,7 +45,13 @@ class CompanyDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvide
 
   import profile.api._
 
-  /** Retrieve a company from the id. */
+  /**
+    * Retourne la company correspondante à l'id reçu en paramètre.
+    *
+    * @param id , l'id de la company à retourner.
+    *
+    * @return la company correspondante à l'id reçu en paramètre.
+    */
   def findById(id: Long): Future[Option[CompanyWithObjects]] = {
     val query = for {
       company <- companies if company.id === id
@@ -58,6 +64,11 @@ class CompanyDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvide
           .fromCompany(tuple._1, tuple._2, Some(Await.result(scheduleDAO.findAllDailySchedulesFromCompanyId(tuple._1.id.get), Duration.Inf)))))
   }
 
+  /**
+    * Retourne toutes les company enregistrées dans la base de données.
+    *
+    * @return toutes les company enregistrées dans la base de données.
+    */
   def find: Future[Seq[CompanyWithObjects]] = {
     val query = for {
       company <- companies
@@ -70,15 +81,33 @@ class CompanyDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvide
           .fromCompany(tuple._1, tuple._2, Some(Await.result(scheduleDAO.findAllDailySchedulesFromCompanyId(tuple._1.id.get), Duration.Inf)))))
   }
 
-  /** Insert a new course, then return it. */
+  /**
+    * Ajoute la nouvelle company reçue en paramètre à la base de données.
+    *
+    * @param company , la company à ajouter à la base de données.
+    *
+    * @return la nouvelle company.
+    */
   def insert(company: Company): Future[Company] = db.run(companies returning companies.map(_.id) into ((company, id) => company.copy(Some(id))) += company)
 
-  /** Update a company, then return an integer that indicates if the company was found (1) or not (0). */
+  /**
+    * Met à jour la company reçue en paramètre.
+    *
+    * @param company , la company à mettre à jour.
+    *
+    * @return la company mise à jour.
+    */
   def update(company: Company): Future[Option[Company]] = db.run(companies.filter(_.id === company.id).update(company.copy(company.id)).map {
     case 0 => None
     case _ => Some(company)
   })
 
-  /** Delete a company, then return an integer that indicates if the company was found (1) or not (0) */
+  /**
+    * Supprime la company correspondante à l'id reçu en paramètre.
+    *
+    * @param id l'id de la company à supprimer.
+    *
+    * @return 1 si la company a été supprimée avec succès, 0 s'il n'y a pas de company avec cet id dans la base de données.
+    */
   def delete(id: Long): Future[Int] = db.run(companies.filter(_.id === id).delete)
 }

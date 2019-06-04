@@ -5,6 +5,9 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 
+/**
+  * Object contenant tout les implicits permettant de convertir un objet JSON en un objet scala correspondant aux modèles et inversément.
+  */
 object ImplicitsJson {
   implicit val jsonToUserTypeEnum: Reads[UserTypeEnum.Value] = Reads.enumNameReads(UserTypeEnum)
   implicit val jsonToDaysEnum: Reads[DaysEnum.Value] = Reads.enumNameReads(DaysEnum)
@@ -109,7 +112,7 @@ object ImplicitsJson {
       (JsPath \ "firstname").write[String] and
       (JsPath \ "lastname").write[String] and
       (JsPath \ "email").write[String] and
-      (JsPath \ "password").write[String] and // FIXME: est-ce possible d'effacer le contenu du password pour ne jamais le retourner? -> sinon faire .copy(password = null partout...!
+      (JsPath \ "password").write[String] and
       (JsPath \ "userType").write[UserTypeEnum.Value] and
       (JsPath \ "companyId").writeNullable[Long]
     ) (unlift(User.unapply))

@@ -11,7 +11,7 @@ trait BeerComponent extends CompanyComponent {
 
   import profile.api._
 
-  // This class convert the database's beers table in a object-oriented entity: the Beer model.
+  // This class convert the database's beer table in a object-oriented entity: the Beer model.
   class BeerTable(tag: Tag) extends Table[Beer](tag, "BEER") {
     def id = column[Long]("ID", O.PrimaryKey, O.AutoInc) // Primary key, auto-incremented
 
@@ -27,7 +27,7 @@ trait BeerComponent extends CompanyComponent {
     def * = (id.?, name, brand, degreeAlcohol, image) <> (Beer.tupled, Beer.unapply)
   }
 
-  // This class convert the database's beers table in a object-oriented entity: the Beer model.
+  // This class convert the database's LinkCompanyBeer table in a object-oriented entity: the LinkCompanyBeer model.
   class LinkCompanyBeerTable(tag: Tag) extends Table[Link_Company_Beer](tag, "LINK_COMPANY_BEER") {
     def id = column[Long]("ID", O.PrimaryKey, O.AutoInc) // Primary key, auto-incremented
 
@@ -56,27 +56,63 @@ trait BeerComponent extends CompanyComponent {
 class BeerDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)(implicit executionContext: ExecutionContext)
   extends BeerComponent with HasDatabaseConfigProvider[JdbcProfile] {
 
+  import models.Company
   import profile.api._
 
-  /** Retrieve all beers. */
+  /**
+    * Retourne toutes les bières présentes dans la BDD.
+    *
+    * @return toutes les bières présentes dans la BDD.
+    */
   def find: Future[Seq[Beer]] = db.run(beers.result)
 
-  /** Retrieve a beer from the id. */
+  /**
+    * Retourne la bière correspondant à l'id reçu.
+    *
+    * @param id , l'id de la bière à retourner.
+    *
+    * @return la bière correspondant à l'id reçu.
+    */
   def findById(id: Long): Future[Option[Beer]] = db.run(beers.filter(_.id === id).result.headOption)
 
-  /** Insert a new course, then return it. */
+  /**
+    * Enregistre la nouvelle bière reçue en paramètre.
+    *
+    * @param beer , la nouvelle bière à enregistrer.
+    *
+    * @return la nouvelle bière enregistrée.
+    */
   def insert(beer: Beer): Future[Beer] = db.run(beers returning beers.map(_.id) into ((beer, id) => beer.copy(Some(id))) += beer)
 
-  /** Update a beer, then return an integer that indicates if the beer was found (1) or not (0). */
+  /**
+    * Met à jour la bière reçue en paramètre.
+    *
+    * @param beer , les informations de la bière à mettre à jour.
+    *
+    * @return la bière mise à jour.
+    */
   def update(beer: Beer): Future[Option[Beer]] = db.run(beers.filter(_.id === beer.id).update(beer.copy(beer.id)).map {
     case 0 => None
     case _ => Some(beer)
   })
 
-  /** Delete a beer, then return an integer that indicates if the beer was found (1) or not (0) */
+  /**
+    * Supprime la bière correspondant à l'id reçu en paramètre.
+    *
+    * @param id , l'id de la bière à supprimer.
+    *
+    * @return 1 si la bière a bien été supprimée, 0 si l'id ne correspond à aucune bière dans la BDD.
+    */
   def delete(id: Long): Future[Int] = db.run(beers.filter(_.id === id).delete)
 
-  def getAllBeersOfCompany(companyId: Long) = {
+  /**
+    * Retourne toutes les bières proposées par la company correspondante au companyId reçu en paramètre.
+    *
+    * @param companyId , l'id de la company dont on souhaite récupérer la liste de boissons.
+    *
+    * @return toutes les bières proposées par la company correspondante au companyId reçu en paramètre.
+    */
+  def getAllBeersOfCompany(companyId: Long): Future[Seq[Beer]] = {
     val query = for {
       linkCB <- linkCompanyBeer if linkCB.companyId === companyId
       beer <- linkCB.beer
@@ -85,7 +121,15 @@ class BeerDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)(
     db.run(query.result)
   }
 
-  def getOneBeerOfCompany(companyId: Long, beerId: Long) = {
+  /**
+    * Retourne la bières proposée par la companie correspondant au companyId reçu en paramètre et correspondant au beerId reçu.
+    *
+    * @param companyId , l'id de la company dont on souhaite récupérer une bière de la liste de boissons proposées.
+    * @param beerId    , l'id de la bière que l'on souhaite récupérer.
+    *
+    * @return la bières proposée par la companie correspondant au companyId reçu en paramètre et correspondant au beerId reçu.
+    */
+  def getOneBeerOfCompany(companyId: Long, beerId: Long): Future[Option[Beer]] = {
     val query = for {
       linkCB <- linkCompanyBeer if linkCB.companyId === companyId
       beer <- linkCB.beer if beer.id === beerId
@@ -94,7 +138,15 @@ class BeerDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)(
     db.run(query.result.headOption)
   }
 
-  def addBeerToDrinkListOfCompany(companyId: Long, beerId: Long) = {
+  /**
+    * Ajoute la bière avec l'id beerId à la liste des boissons proposées par la company avec l'id companyId.
+    *
+    * @param companyId , l'id de la company pour laquelle on souhaite ajouter une boisson à la liste de boissons proposées.
+    * @param beerId    , l'id de la bière que l'on souhaite ajouter à la liste de boissons proposées par la company.
+    *
+    * @return un tuple (company, beer) contenant les informations de la company à laquelle on a ajouté une boisson, ainsi que celles de la bière ajoutée.
+    */
+  def addBeerToDrinkListOfCompany(companyId: Long, beerId: Long): Future[(Company, Beer)] = {
     val query = for {
       beer <- beers if beer.id === beerId
       company <- companies if company.id === companyId
@@ -107,6 +159,14 @@ class BeerDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)(
     })
   }
 
+  /**
+    * Supprime la bière avec l'id beerId de la liste des boissons proposées par la company avec l'id companyId.
+    *
+    * @param companyId , l'id de la company pour laquelle on souhaite supprimer une boisson de la liste de boissons proposées.
+    * @param beerId    , l'id de la bière que l'on souhaite supprimer de la liste de boissons proposées par la company.
+    *
+    * @return 1 si la bière a bien été supprimée de la liste de boissons de la company correspondant à l'id companyIs, 0 si l'id ne correspond à aucune bière de la liste de boissons de la company.
+    */
   def removeBeerFromDrinkListOfCompany(companyId: Long, beerId: Long): Future[Int] = {
     db.run(linkCompanyBeer.filter(row => row.companyId === companyId && row.beerId === beerId).delete)
   }

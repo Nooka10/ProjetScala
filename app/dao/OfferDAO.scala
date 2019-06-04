@@ -3,7 +3,6 @@ package dao
 import javax.inject.{Inject, Singleton}
 import models._
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
-import play.api.libs.json.Json
 import scala.concurrent.{ExecutionContext, Future}
 import slick.jdbc.JdbcProfile
 
@@ -48,7 +47,14 @@ class OfferDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
 
   import profile.api._
 
-  /** Retrieve an offer from his companyId and clientId. */
+  /**
+    * Retourne l'offre correspondant au companyId et clientId reçus en paramètres.
+    *
+    * @param companyId
+    * @param clientId
+    *
+    * @return l'offre correspondant au companyId et clientId reçus en paramètres.
+    */
   def findById(companyId: Long, clientId: Long): Future[Option[OfferWithObjects]] = {
     val query = for {
       offer <- offers
@@ -61,7 +67,13 @@ class OfferDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
     triple.map(x => x.map(offer => OfferWithObjects(offer._1, offer._2, Some(offer._3))))
   }
 
-  /** Retrieve all offers of a user from his clientId. */
+  /**
+    * Retourne toutes les offres de l'utilisateur correspondant à l'id reçu en paramètre.
+    *
+    * @param clientId l'id de l'utilisateur dont on souhaite récupérer toutes les offres.
+    *
+    * @return toutes les offres de l'utilisateur correspondant à l'id reçu en paramètre.
+    */
   def findAllOffersOfUser(clientId: Long): Future[Seq[OfferWithObjects]] = {
     val query = for {
       (offer, beer) <- offers joinLeft beers on (_.beerId === _.id)
@@ -72,6 +84,13 @@ class OfferDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
     db.run(query.result).map(_.map(offer => OfferWithObjects(offer._1, offer._2, offer._3)))
   }
 
+  /**
+    * Retourne toutes les offres non utilisées de l'utilisateur correspondant à l'id reçu en paramètre.
+    *
+    * @param clientId l'id de l'utilisateur dont on souhaite récupérer toutes les offres non utilisées.
+    *
+    * @return toutes les offres non utilisées de l'utilisateur correspondant à l'id reçu en paramètre.
+    */
   def findAllUnusedOffersOfUser(clientId: Long): Future[Seq[OfferWithObjects]] = {
     val query = for {
       (offer, beer) <- offers joinLeft beers on (_.beerId === _.id) if offer.beerId.isEmpty // si beerId est null -> l'offre n'a pas encore été utilisée
@@ -82,6 +101,13 @@ class OfferDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
     db.run(query.result).map(_.map(offer => OfferWithObjects(offer._1, offer._2, offer._3)))
   }
 
+  /**
+    * Retourne toutes les offres utilisées de l'utilisateur correspondant à l'id reçu en paramètre.
+    *
+    * @param clientId l'id de l'utilisateur dont on souhaite récupérer toutes les offres utilisées.
+    *
+    * @return toutes les offres utilisées de l'utilisateur correspondant à l'id reçu en paramètre.
+    */
   def findAllConsumedOffersOfUser(clientId: Long): Future[Seq[OfferWithObjects]] = {
     val query = for {
       (offer, beer) <- offers joinLeft beers on (_.beerId === _.id) if offer.beerId.nonEmpty // si beerId est non null -> l'offre a déjà été utilisée
@@ -92,7 +118,14 @@ class OfferDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
     db.run(query.result).map(_.map(offer => OfferWithObjects(offer._1, offer._2, offer._3)))
   }
 
-  def createOffersForNewCompany(companyId: Long) = {
+  /**
+    * Crée une nouvelle offre dans la company correspondant à l'id reçu en paramètre pour tous les clients enregistrés dans la base de données.
+    *
+    * @param companyId , l'id de la company pour laquelle on souhaite créer une nouvelle offre pour tous les clients de la base de données.
+    *
+    * @return toutes les nouvelles offre créées.
+    */
+  def createOffersForNewCompany(companyId: Long): Future[Seq[Offer]] = {
     val query = for {
       user <- users if user.userType === UserTypeEnum.CLIENT
     } yield user
@@ -101,7 +134,14 @@ class OfferDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
     db.run(offers).flatten // permet de passer d'une Future[Future[...]] à une Future[...]
   }
 
-  def createAllOffersForNewUser(clientId: Long) = {
+  /**
+    * Crée une offre pour l'utilisateur correspondant à l'id reçu en paramètre pour chaque company de la base de données.
+    *
+    * @param clientId , l'id du client pour lequel on souhaite créer une nouvelle offre dans chaque company de la base de données.
+    *
+    * @return les nouvelles offres créées.
+    */
+  def createAllOffersForNewUser(clientId: Long): Future[Seq[Offer]] = {
     val query = for {
       company <- companies
     } yield company
@@ -110,11 +150,23 @@ class OfferDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
     db.run(offers).flatten // permet de passer d'une Future[Future[...]] à une Future[...]
   }
 
-  /** Insert a new offer, then return it. */
+  /**
+    * Enregistre une nouvelle offre dans la base de données.
+    *
+    * @param offer , l'offre à enregistrer dans la base de données.
+    *
+    * @return la nouvelle offre enregistrée.
+    */
   def insert(offer: Offer): Future[Offer] = db.run(offers returning offers.map(_.id) into ((offer, id) => offer.copy(id = id)) += OfferWithIDToOffer.fromOffer(offer))
     .map(o => Offer(o.companyId, o.clientId, o.beerId))
 
-  /** Update a offer, then return an integer that indicates if the offer was found (1) or not (0). */
+  /**
+    * Met à jour l'offre reçue en paramètre.
+    *
+    * @param offer , l'offre à mettre à jour.
+    *
+    * @return l'offre mise à jour.
+    */
   def update(offer: Offer): Future[Option[Offer]] = {
     db.run(offers.filter(e => e.companyId === offer.companyId && e.clientId === offer.clientId && e.beerId.isEmpty).map(_.beerId).update(offer.beerId)).map {
       case 0 => None
@@ -122,10 +174,22 @@ class OfferDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
     }
   }
 
-  /** Delete a offer, then return an integer that indicates if the offer was found (1) or not (0) */
+  /**
+    * Supprime l'offre correspondant aux primaryKeys (companyId, clientId) reçues en paramètres.
+    *
+    * @param companyId
+    * @param clientId
+    *
+    * @return 1 si l'offre a été supprimée avec succès, 0 s'il n'y a pas d'offre correspondant à ce couple de primaryKeys dans la base de données.
+    */
   def delete(companyId: Long, clientId: Long): Future[Int] = db.run(offers.filter(e => e.companyId === companyId && e.clientId === clientId).delete)
 
-  def getMostPopularCompany = {
+  /**
+    * Retourne les informations de la company la plus fréquentée par les clients de notre BeerPass, ainsi que son nombre de clients.
+    *
+    * @return les informations de la company la plus fréquentée par les clients de notre BeerPass, ainsi que son nombre de clients.
+    */
+  def getMostPopularCompany: Future[(Long, Int)] = {
     val query = (for {
       offer <- offers if offer.beerId.nonEmpty
       company <- offer.company
@@ -135,7 +199,12 @@ class OfferDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
     db.run(query.result.head)
   }
 
-  def getMostFamousBeer = {
+  /**
+    * Retourne les informations de la bière la plus appréciées des clients de notre BeerPass, ainsi que le nombre de fois qu'elle a été commandée par les clients.
+    *
+    * @return les informations de la bière la plus appréciées des clients de notre BeerPass, ainsi que le nombre de fois qu'elle a été commandée par les clients.
+    */
+  def getMostFamousBeer: Future[(Long, Int)] = {
     val query = (for {
       offer <- offers if offer.beerId.nonEmpty
       beer <- offer.beer

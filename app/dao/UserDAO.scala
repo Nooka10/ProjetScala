@@ -53,26 +53,69 @@ class UserDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)(
 
   import profile.api._
 
-  /** Retrieve a user from the id. */
+  /**
+    * Retourne l'utilisateur correspondant à l'id reçu en paramètre.
+    *
+    * @param id , l'id de l'utilisateur à retourner.
+    *
+    * @return l'utilisateur correspondant à l'id reçu en paramètre.
+    */
   def findById(id: Long): Future[Option[User]] = db.run(users.filter(_.id === id).result.headOption)
 
-  /** Retrieve a user from the email. */
+  /**
+    * Retourne l'utilisateur correspondant à l'email reçu en paramètre.
+    *
+    * @param email , l'email de l'utilisateur à retourner.
+    *
+    * @return l'utilisateur correspondant à l'email reçu en paramètre.
+    */
   def findByEmail(email: String): Future[Option[User]] = db.run(users.filter(_.email === email).result.headOption)
 
+  /**
+    * Retourne tous les employés de la company correspondante à l'id reçu en paramètre.
+    *
+    * @param companyId , l'id de la company dont on souhaite récupérer les employés.
+    *
+    * @return tous les employés de la company correspondante à l'id reçu en paramètre.
+    */
   def findAllEmployees(companyId: Long): Future[Seq[User]] = db.run(users.filter(_.companyId === companyId).result)
 
-  /** Retrieve a user from the id. */
+  /**
+    * Retourne true si l'email reçu en paramètre est disponible (pas encore présent dans la base de données), false sinon (déjà utilisé par un utilisateur)
+    *
+    * @param email , l'email dont on souhaite vérifier l'existance dans la base de données.
+    *
+    * @return true si l'email reçu en paramètre est disponible (pas encore présent dans la base de données), false sinon (déjà utilisé par un utilisateur)
+    */
   def isEmailAvailable(email: String): Future[Boolean] = db.run(users.filter(_.email === email).exists.result)
 
-  /** Insert a new user, then return it. */
+  /**
+    * Enregistre un nouvel utilisateur dans la base de données.
+    *
+    * @param user , le nouvel utilisateur à enregistrer.
+    *
+    * @return le nouvel utilisateur enregistré.
+    */
   def insert(user: User): Future[User] = db.run(users returning users.map(_.id) into ((user, id) => user.copy(Some(id))) += user)
 
-  /** Update a user, then return an integer that indicates if the user was found (1) or not (0). */
+  /**
+    * Met à jour l'utilisateur reçu en paramètre.
+    *
+    * @param user , l'utilsiateur à mettre à jour.
+    *
+    * @return l'utilsiateur mis à jour.
+    */
   def update(user: User): Future[Option[User]] = db.run(users.filter(_.id === user.id).update(user.copy(user.id)).map {
     case 0 => None
     case _ => Some(user)
   })
 
-  /** Delete a user, then return an integer that indicates if the user was found (1) or not (0) */
+  /**
+    * Supprime l'utilsiateur correspondant à l'id reçu en paramètre
+    *
+    * @param id , l'id de l'utilisateur à supprimer.
+    *
+    * @return 1 si l'utilisateur a été supprimée correctement, 0 s'il n'y a pas d'utilisateur correspondant à cet id dans la base de données.
+    */
   def delete(id: Long): Future[Int] = db.run(users.filter(_.id === id).delete)
 }
