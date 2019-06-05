@@ -219,7 +219,7 @@ class OfferDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
     *
     * @return les informations de la bière la plus appréciées des clients de notre BeerPass dans la company correspondant à l'id reçu en paramètre, ainsi que le nombre de fois qu'elle a été commandée par les clients.
     */
-  def getMostFamousBeerForCompany(companyId: Long: Future[(Long, Int)] = {
+  def getMostFamousBeerForCompany(companyId: Long): Future[(Long, Int)] = {
     val query = (for {
       offer <- offers if offer.beerId.nonEmpty && offer.companyId === companyId
       beer <- offer.beer
