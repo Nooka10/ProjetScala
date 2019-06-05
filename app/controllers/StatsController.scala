@@ -34,4 +34,15 @@ class StatsController @Inject()(cc: ControllerComponents, offerDAO: OfferDAO, co
       case (beerId, nbClients) => Ok(Json.obj("mostFamousBeer" -> Json.toJson(Await.result(beerDAO.findById(beerId), Duration.Inf)), "nbClients" -> nbClients))
     }
   }
+
+  /**
+    * Retourne les informations de la bière la plus appréciées des clients de notre BeerPass, ainsi que le nombre de fois qu'elle a été commandée par les clients.
+    *
+    * @return les informations de la bière la plus appréciées des clients de notre BeerPass, ainsi que le nombre de fois qu'elle a été commandée par les clients.
+    */
+  def getMostFamousBeerForCompany(companyId: Long) = Action.async {
+    offerDAO.getMostFamousBeerForCompany(companyId).map {
+      case (beerId, nbClients) => Ok(Json.obj("mostFamousBeer" -> Json.toJson(Await.result(beerDAO.findById(beerId), Duration.Inf)), "nbClients" -> nbClients))
+    }
+  }
 }

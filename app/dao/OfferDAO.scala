@@ -213,4 +213,19 @@ class OfferDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
     }.sortBy(_._2.desc).take(1)
     db.run(query.result.head)
   }
+
+  /**
+    * Retourne les informations de la bière la plus appréciées des clients de notre BeerPass dans la company correspondant à l'id reçu en paramètre, ainsi que le nombre de fois qu'elle a été commandée par les clients.
+    *
+    * @return les informations de la bière la plus appréciées des clients de notre BeerPass dans la company correspondant à l'id reçu en paramètre, ainsi que le nombre de fois qu'elle a été commandée par les clients.
+    */
+  def getMostFamousBeerForCompany(companyId: Long: Future[(Long, Int)] = {
+    val query = (for {
+      offer <- offers if offer.beerId.nonEmpty && offer.companyId === companyId
+      beer <- offer.beer
+    } yield (offer, beer)).groupBy(_._2.id).map {
+      case (beerId, offersCompany) => (beerId, offersCompany.length)
+    }.sortBy(_._2.desc).take(1)
+    db.run(query.result.head)
+  }
 }
