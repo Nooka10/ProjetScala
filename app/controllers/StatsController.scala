@@ -43,6 +43,10 @@ class StatsController @Inject()(cc: ControllerComponents, offerDAO: OfferDAO, co
   def getMostFamousBeerForCompany(companyId: Long) = Action.async {
     offerDAO.getMostFamousBeerForCompany(companyId).map {
       case (beerId, nbClients) => Ok(Json.obj("mostFamousBeer" -> Json.toJson(Await.result(beerDAO.findById(beerId), Duration.Inf)), "nbClients" -> nbClients))
+      case _ => NotFound(Json.obj(
+        "status" -> "Not Found",
+        "message" -> ("Company with id'" + companyId + "' not found.")
+      ))
     }
   }
 }

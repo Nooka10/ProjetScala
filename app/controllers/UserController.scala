@@ -147,7 +147,7 @@ class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO, offe
           // le mot de passe reçu est correct -> on met l'utilisateur à jour
           case true => Await.result(usersDAO.update(userToUpdate).map {
             case Some(user) =>
-              val userWithoutPwd = user.copy(password = null)
+              val userWithoutPwd: User = user.copy(password = null)
               Ok(
                 Json.obj(
                   "status" -> "OK",
@@ -155,6 +155,10 @@ class UserController @Inject()(cc: ControllerComponents, usersDAO: UserDAO, offe
                   "userInfo" -> userWithoutPwd
                 )
               )
+            case None => NotFound(Json.obj(
+              "status" -> "Not Found",
+              "message" -> ("User #" + userId + " not found.")
+            ))
           }, Duration.Inf)
           // le mot de passe reçu n'est pas correct -> on ne met pas l'utilisateur à jour
           case false => Unauthorized(Json.obj(
