@@ -1,33 +1,33 @@
 import React, { Component } from 'react';
-import { View, Text, Image, ScrollView, StyleSheet, Modal, TouchableHighlight, TouchableOpacity } from 'react-native';
-import QRCodeGenerator from './QRCodeGenerator'
-import { AntDesign } from '@expo/vector-icons';
+import {
+  View, Text, Image, ScrollView, StyleSheet, TouchableOpacity
+} from 'react-native';
+import QRCodeGenerator from './QRCodeGenerator';
 import Layout from '../constants/Layout';
 import DaySchedule from './DaySchedule';
 import Loader from './Loader';
 import { MapView } from 'expo';
 
-
-
 export default class BarDetails extends Component {
 
   state = {
-    modalVisible: false,
-    QRDialogvisible: false,
     companyDetails: null,
     beers: [],
     loading: false,
   };
 
   componentDidMount() {
-    this.fetchDatas()
+    this.fetchDatas();
   }
 
   fetchDatas = async () => {
-    this.props.onLoadingBegin()
-    await this.fetchCompanyDetails()
-    await this.fetchBeers()
-    setTimeout(() => this.props.onLoadingEnd(), 200);
+    const { onLoadingBegin, onLoadingEnd } = this.props;
+
+    onLoadingBegin();
+    Promise.all([onLoadingBegin(), this.fetchCompanyDetails(), this.fetchBeers(), fetchMostFamousBeer(), waitingForAnimation])
+      .then(() => {
+        onLoadingEnd();
+      });
   }
 
   fetchCompanyDetails = async () => {
@@ -54,7 +54,7 @@ export default class BarDetails extends Component {
       })
       .catch((error) => {
         console.error(error);
-      });;
+      });
 
   }
 

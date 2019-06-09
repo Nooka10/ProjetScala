@@ -1,6 +1,5 @@
 
-import React, { Component } from 'react'
-import { Text } from 'react-native'
+import React, { Component } from 'react';
 import QRCode from 'react-native-qrcode-svg';
 
 import {
@@ -8,12 +7,11 @@ import {
   View,
 } from 'react-native';
 
-export default class HelloWorld extends Component {
-
+export default class QRCodeGenerator extends Component {
 
   render() {
     const { size, data } = this.props;
-    let logoFromFile = require('../assets/images/pint.png');
+    let logoFromFile = require('../assets/images/BeerPassLogo4.png');
     const qrValue = JSON.stringify({
       company: data.company.id,
       user: data.user.id,
