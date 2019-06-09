@@ -21,9 +21,7 @@ const theme = createMuiTheme({
 function App() {
   return (
     <MuiThemeProvider theme={theme}>
-
       <Router>
-
         <AppBar />
         <Route exact path="/" component={HomeScreen} />
         <Route path="/bars" component={BarsScreen} />

@@ -6,12 +6,11 @@ import {
 } from 'react-leaflet';
 import L from 'leaflet';
 import { Grid } from '@material-ui/core';
+import PropTypes from 'prop-types';
 import Loading from '../components/Loading';
-import pass from '../assets/BeerPassLogo3.png'; // Tell Webpack this JS file uses this image
 import DaySchedule from '../components/DaySchedule';
 import FetchBackend from '../api/FetchBackend';
 import BeerItem from '../components/BeerItem';
-
 
 const iconUrl = require('../assets/BeerPassMarker.png');
 
@@ -40,27 +39,27 @@ const useStyles = makeStyles({
   },
   beerTitle: {
     paddingTop: 40,
-  }
+  },
 });
 
-function BarDetailsSreen({ match }) {
+export default function BarDetailsScreen({ match }) {
   const classes = useStyles();
   const [loading, setLoading] = useState(true);
   const [companyDetails, setCompanyDetails] = useState(0);
   const [companyBeers, setCompanyBeers] = useState(0);
 
   useEffect(() => {
+    const { barId } = match.params;
+
     const fetchBar = async () => {
-      const result = await FetchBackend.fetchCompanyDetails(match.params.barId);
-      console.log(result);
+      const result = await FetchBackend.fetchCompanyDetails(barId);
       if (result) {
         setCompanyDetails(result);
       }
     };
 
     const fetchBeersForBar = async () => {
-      const result = await FetchBackend.fetchBeersForCompany(match.params.barId);
-      console.log(result);
+      const result = await FetchBackend.fetchBeersForCompany(barId);
       if (result) {
         setCompanyBeers(result);
       }
@@ -72,7 +71,7 @@ function BarDetailsSreen({ match }) {
       .then(() => {
         setLoading(false);
       });
-  }, []);
+  }, [match]);
 
   return (
     loading ? <Loading />
@@ -150,4 +149,6 @@ function BarDetailsSreen({ match }) {
   );
 }
 
-export default BarDetailsSreen;
+BarDetailsScreen.propTypes = {
+  match: PropTypes.shape().isRequired,
+};

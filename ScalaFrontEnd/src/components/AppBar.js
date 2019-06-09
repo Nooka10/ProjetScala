@@ -1,16 +1,14 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
-import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
 import ShoppingCart from '@material-ui/icons/ShoppingCart';
 import Grid from '@material-ui/core/Grid';
+import { Link } from 'react-router-dom';
 import logo from '../assets/BeerPassLogo2.png';
-import { BrowserRouter as Router, Route, Link } from "react-router-dom";
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles(() => ({
   root: {
     flexGrow: 1,
   },
@@ -71,9 +69,7 @@ export default function AppBarHeader() {
               <ShoppingCart />
             </IconButton>
 
-
           </Grid>
-
         </Grid>
       </AppBar>
     </div>

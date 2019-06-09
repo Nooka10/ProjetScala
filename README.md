@@ -139,8 +139,6 @@ L'écran de login permet à un utilisateur de se connecter à l'application. Il 
 
 Un écran de Réglage permet à l'utilisateur de se déconnecter de son compte.
 
-
-
 ##### Librairies utilisées
 
 Outre les outils fournit par Expo, nous avons utilisé les librairies React Native suivantes :

@@ -1,12 +1,13 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import { Typography, Grid, Hidden, Card, CardActionArea, CardContent, Paper } from '@material-ui/core';
+import { Typography, Grid } from '@material-ui/core';
 import PropTypes from 'prop-types';
 
 
 const useStyles = makeStyles({
   root: {
-    marginTop: 10,
+    paddingTop: 10,
+    paddingBottom: 10,
   },
   imageBeer: {
     height: 50,

@@ -4,7 +4,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import {
   Grid, Paper, Card, CardActionArea, CardContent,
 } from '@material-ui/core';
-import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Loading from '../components/Loading';
 import FetchBackend from '../api/FetchBackend';
 import HomePageImage from '../assets/HomePageImage.jpg'; // Tell Webpack this JS file uses this image

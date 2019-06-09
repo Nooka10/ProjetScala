@@ -5,7 +5,6 @@ import {
 } from '@material-ui/core';
 import pass from '../assets/BeerPassLogo3.png'; // Tell Webpack this JS file uses this image
 
-
 const useStyles = makeStyles({
   root: {
     paddingTop: 200,
@@ -17,7 +16,7 @@ const useStyles = makeStyles({
   },
   passImage: {
     height: 300,
-    width:'90%',
+    width: '90%',
   },
   paddingTop: {
     paddingTop: 20,

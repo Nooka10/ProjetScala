@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
 import {
   Map, TileLayer, Marker, Popup,
 } from 'react-leaflet';
 import L from 'leaflet';
-import { Grid } from '@material-ui/core';
-import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Loading from '../components/Loading';
 import FetchBackend from '../api/FetchBackend';
 
@@ -36,7 +34,7 @@ const useStyles = makeStyles({
   },
 });
 
-function BarSreen() {
+export default function BarScreen() {
   const classes = useStyles();
   const [loading, setLoading] = useState(true);
   const [bars, setBars] = useState(0);
@@ -74,6 +72,7 @@ function BarSreen() {
             const linkToBar = `/bar/${bar.id}`;
             return (
               <Marker
+                key={bar.id}
                 position={[bar.address.lat, bar.address.lng]}
                 icon={greenIcon}
               >
@@ -93,5 +92,3 @@ function BarSreen() {
 
   );
 }
-
-export default BarSreen;

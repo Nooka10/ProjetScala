@@ -3,11 +3,7 @@ const baseUrl = 'https://beerpass-scala.herokuapp.com';
 const fetchBackend = async (url) => {
   try {
     const response = await fetch(url);
-
     const responseJson = await response.json();
-
-    console.log('responseJson', responseJson);
-
     return responseJson;
   } catch (err) {
     console.error(err);
@@ -41,5 +37,4 @@ export default {
   fetchMostPopularCompany,
   fetchMostFamousBeer,
   fetchBeersForCompany,
-
 };
