@@ -4,8 +4,6 @@ version := "1.0"
 
 lazy val `beerpass` = (project in file(".")).enablePlugins(PlayScala)
 
-enablePlugins(sbtdocker.DockerPlugin)
-
 resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
 
 resolvers += "Akka Snapshot Repository" at "http://repo.akka.io/snapshots/"
