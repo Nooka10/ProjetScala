@@ -125,7 +125,21 @@ L'utilisation de l'application se veut simplifiée et permet à l'utilisateur de
 
 Pour cette application mobile, nous avons utilisé React Native ainsi que Expo afin d'avoir une application cross-plateforme.
 
-Expo permet de simplifier la création d'applications mobiles et permettant notamment de construire des applications Android et iOS sans avoir besoin d'utiliser Android Studio ou XCode. De plus, Expo fournit une série d'outils cross-plateformes bien utiles pour notre application (accès à la caméra, lecture de QR Code, affichage d'une carte, ...).
+Expo permet de simplifier la création d'applications mobiles et permettant notamment de construire des applications Android et iOS sans avoir besoin d'utiliser Android Studio ou XCode. De plus, Expo fournit une série d'outils cross-plateformes bien utiles pour notre application (accès à la caméra, lecture de QR Code, affichage d'une carte, etc).
+
+##### Ecrans
+
+L'écran de login permet à un utilisateur de se connecter à l'application. Il doit pour cela entrer son email ainsi que son mot de passe. En fonction de son rôle (client ou membre d'un établissement partenaire), les écrans disponibles à l'utilisateur ne sont pas les mêmes.
+
+- Pour les clients
+  - Ecran avec tous les bons valables et dont il peut profiter. En cliquant sur un bon, il peut accéder aux informations de l'établissement (tels que la description, les horaires, les bières qu'il propose) correspondant et générer le QR Code nécessaire à la validation du bon. Il peut également zoomer sur le QR Code en cliquant dessus.
+  - Ecran avec les bons déjà utilisés. Sensiblement la même chose que pour les bons utilisés. Utile si l'utilisateur veut retrouver les informations sur un établissement qu'il a visité.
+- Pour les membres des établissements
+  - Un écran permettant simplement de scanner un QR Code afin de valider une commande faite par un client
+
+Un écran de Réglage permet à l'utilisateur de se déconnecter de son compte.
+
+
 
 ##### Librairies utilisées
 
@@ -137,13 +151,15 @@ Outre les outils fournit par Expo, nous avons utilisé les librairies React Nati
 
 ### Frontend Web
 
-En plus de l'application mobile, nous avons implémenté un front end Web en utilisant React afin d'afficher les informations pour un utilisateur qui veut en savoir plus sur le Beer Pass.
+En plus de l'application mobile, nous avons implémenté un front end Web en utilisant React afin d'afficher les informations pour un utilisateur qui veut en savoir plus sur le Beer Pass, les établissements partenaires, ou encore se procurer un Beer Pass.
+
+##### Pages 
 
 La page d'accueil présente le concept du Bier Pass et affiche le nombre d'établissements partenaires ainsi que le nombre de bières différentes que l'utilisateur pourrait tester. Cette page d'accueil contient aussi des statistiques pour connaître l'établissement qui a le plus de succès ainsi que la bière qui a été choisie par le plus d'utilisateurs.
 
 La page des établissements offre une carte affichant tous les emplacements des établissements partenaires. En cliquant sur un marqueur, cela affiche une pop-up contenant le nom de l'établissement. L'utilisateur peut ensuite cliquer sur ce nom afin d'afficher les détails de l'établissement.
 
-La page de détail des établissements permet de consulter toutes les informations relatives à un établissement choisi, tels que sa decription, son adresse, les bières qu'il propose, son adresse, ses horaires ainsi que sa position sur une carte.
+La page de détail des établissements permet de consulter toutes les informations relatives à un établissement choisi, tels que sa decription, son adresse, les bières qu'il propose, ses horaires ainsi que sa position sur une carte.
 
 La page de shopping permettra par la suite de se procurer un Beer Pass. Malheureusement, à l'heure actuelle il n'est pas encore possible de s'en procurer un mais cela ne devrait plus tarder, restez informez ! Cela explique que le bouton d'ajout au panier soit désactivé.
 
