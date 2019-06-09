@@ -23,10 +23,14 @@ Pour ce projet, nous avons utilisé:
     - De consulter les bons disponibles
     - De consulter les bons utilisés
     - De faire valoir un bon en générant un QR Code qui sera scanné par l'établissement partenaire.
-    - De consulter des statistiques (bière la plus vendue et établissement le plus fréquenté)
   - Pour les établissements :
     - De scanner les QR Code des utilisateurs afin de valider leurs commandes.
-    - De consulter des statistiques (bière la plus vendue et établissement le plus fréquenté)
+- React pour le Frontend Web, qui permet :
+  - Consulter les informations sur le Beer Pass
+  - Consulter des statistiques (bière la plus vendue et établissement le plus fréquenté)
+  - Consulter tous les établissements partenaires sur une carte
+  - Consulter les détails de tous les établissements partenaires (Horaires, adresse, ...)
+  - Se procurer un Beer Pass (pour l'instant, les Beer Pass sont "bientôt disponibles" donc pas encore commandables)
 
 ## Description de l'implémentation:
 
@@ -115,11 +119,52 @@ Notre backend propose une API REST avec les routes suivantes:![Capture d’écr
 
 Nous pouvons effectuer un CRUD sur les company, les users et les bières. Nous pouvons également récupérer et utiliser les offres d'un client ou encore lire quelques statistiques.
 
-### Problèmes rencontrés:
+### Application mobile
+
+L'utilisation de l'application se veut simplifiée et permet à l'utilisateur de consulter ses bons valables et utilisés. S'il décide d'utiliser un de ses bons, il peut simplement montrer à l'établissement le QR Code généré correspondant à cet établissement. L'établissement, lui, doit alors scanner le QR Code ce qui permettra de voir que le bon est bien valable et ainsi valider la commande de l'utilisateur.
+
+Pour cette application mobile, nous avons utilisé React Native ainsi que Expo afin d'avoir une application cross-plateforme.
+
+Expo permet de simplifier la création d'applications mobiles et permettant notamment de construire des applications Android et iOS sans avoir besoin d'utiliser Android Studio ou XCode. De plus, Expo fournit une série d'outils cross-plateformes bien utiles pour notre application (accès à la caméra, lecture de QR Code, affichage d'une carte, ...).
+
+##### Librairies utilisées
+
+Outre les outils fournit par Expo, nous avons utilisé les librairies React Native suivantes :
+
+- *react-native-snap-carousel* : permet à l'utilisateur de faire défiler les bons valables ou utilisés 
+- *react-native-qrcode-svg* : permet de générer un QR Code facilement à partir d'une chaîne de caractère fournie
+- *react-navigation* : permet de naviguer entre les différentes fenêtres de l'application
+
+### Frontend Web
+
+En plus de l'application mobile, nous avons implémenté un front end Web en utilisant React afin d'afficher les informations pour un utilisateur qui veut en savoir plus sur le Beer Pass.
+
+La page d'accueil présente le concept du Bier Pass et affiche le nombre d'établissements partenaires ainsi que le nombre de bières différentes que l'utilisateur pourrait tester. Cette page d'accueil contient aussi des statistiques pour connaître l'établissement qui a le plus de succès ainsi que la bière qui a été choisie par le plus d'utilisateurs.
+
+La page des établissements offre une carte affichant tous les emplacements des établissements partenaires. En cliquant sur un marqueur, cela affiche une pop-up contenant le nom de l'établissement. L'utilisateur peut ensuite cliquer sur ce nom afin d'afficher les détails de l'établissement.
+
+La page de détail des établissements permet de consulter toutes les informations relatives à un établissement choisi, tels que sa decription, son adresse, les bières qu'il propose, son adresse, ses horaires ainsi que sa position sur une carte.
+
+La page de shopping permettra par la suite de se procurer un Beer Pass. Malheureusement, à l'heure actuelle il n'est pas encore possible de s'en procurer un mais cela ne devrait plus tarder, restez informez ! Cela explique que le bouton d'ajout au panier soit désactivé.
+
+##### Librairies utilisées
+
+*material-ui* : une librairie de composants afin de faciliter et améliorer le style de l'application. De nombreux composants ont été utilisés tels que l'AppBar, des Grid, les Card.
+
+*react-leaflet* : adaptation de Leaflet avec React afin d'afficher une carte avec des marqueurs dessus. Service gratuit contrairement à Google.
+
+*react-router :* permet de définir la navigation entre les différents endpoints de l'application  
+
+*eslint* : un linter utile en développement afin de renforcer l'uniformité de notre code et le style d'écriture grâce à des règles.
+
+
+
+## Problèmes rencontrés:
 
 Les principaux problèmes rencontrés ont été causés par Slick!
 
 Tout d'abord, il a été passablement ardu de trouver des exemples de codes quelque peu développés et fonctionnels pour Slick!
+
 En effet, l'exemple qui nous avait été fourni ne montrait pas l'utilisation des foreignKeys et les tables étaient très basiques (pas de relations n-n ou 1-n etc)! Malheureusement, la très grande majorité des exemples Slick disponibles sur internet sont tout aussi basiques voir plus simples encore!
 
 Nous avons donc rencontré des difficultés pour réussir à faire fonctionner les foreignKeys. Difficulté que nous avons finalement pu surmonter avec l'aide de la prof et des assistants qui ont complexifié l'exemple pour nous montrer comment faire fonctionner les foreignKeys.
@@ -128,9 +173,11 @@ Par la suite, nous avons rencontré des difficultés à faire fonctionner les En
 
 Finalement, et c'est sans doute ce qui a terminé de nous dégouter de Slick, il s'est avéré impossible d'ajouter des données dans une table ne possédant pas de champ en AutoInc! Or, selon notre modélisation, la table *LINK_DAILY_SCHEDULE_COMPANY* devrait posséder deux clés primaires (CompanyId et dailyScheduleId) qui sont également deux foreignKeys. Elle ne devrait pas posséder de champ en AutoInc! Mais comme nous n'avons pas pu trouver d'exemples fonctionnels sur internet et ne sommes pas parvenu à régler ce problème, nous avons été obligés d'ajouter une clé primaire *id* en autoInc afin que Slick soit heureux. Ce champ est donc enregistré dans notre base de données alors qu'il nous sert en réalité à rien du tout!
 
+Au niveau de l'application mobile et du front end Web, aucun souci particulier n'est à signaler. Le seul problème rencontré a été le manque de temps dû aux autres cours et travail de Bachelor. Ceci explique le fait que ces deux applications sont très simplistes et n'implémentent pas toutes les possibilités offertent par le back end (voir améliorations possibles).
+
  
 
-### Amélioration possibles:
+## Amélioration possibles:
 
 De nombreuses améliorations pourraient encore être apportées à notre projet!
 
@@ -140,6 +187,8 @@ D'autres améliorations sont possible, tel que trouver comment faire marcher Sli
 
 On pourrait également ajouter de nouvelles statistiques un peu plus poussées.
 
-Mais le gros des améliorations seraient à apporter à l'application directement. En effet, l'application ne propose que quelques fonctionnalités très simples. Le Backend permet de faire bien plus. Par exemple, l'application pourrait proposer au client de modifier ses informations, ou bien de consulter la liste de boissons proposées par un établissement…. On pourrait aussi proposer aux employés d'ajouter / enlever / modifier la liste des boissons proposées par l'établissement directement depuis l'application…
+Mais le gros des améliorations seraient à apporter à l'application directement. En effet, l'application ne propose que quelques fonctionnalités très simples. Le Backend permet de faire bien plus. Par exemple, l'application pourrait proposer au client de modifier ses informations ou de supprimer son compte. On pourrait aussi proposer aux employés d'ajouter / enlever / modifier la liste des boissons proposées par l'établissement directement depuis l'application.
 
-Toutes ses fonctionnalités sont disponibles au niveau du Backend, mais nous n'avons pas eu le temps de les implémenter au niveau de l'application smartphone.
+Il n'y a pas non plus de register dans l'application car nous nous sommes pas encore mis d'accord sur la méthode d'inscription d'un utilisateur. Celui-ci devrait d'abord acheter un Beer Pass, ce que fournirait soit un code d'activation à faire valoir avec un code existant, soit directement des identifiants pour se connecter.
+
+Toutes ces fonctionnalités sont disponibles au niveau du Backend, mais nous n'avons pas eu le temps de les implémenter au niveau de l'application smartphone.
