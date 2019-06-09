@@ -10,7 +10,7 @@ Une fois le Beer Pass commandé, les utilisateurs pourront consulter les bons di
 
 Ce projet permettrait aux utilisateurs de découvrir de nouveaux établissements (bars ou brasseries) dans leur région et ceci à un prix attractif.
 
-L'attrait pour les établissements est double. Une telle application leur permettrait de se faire connaître par de nouveaux clients mais aurait également un interêt financier direct. En effet, il a été prouvé que les clients consommaient davantage ou passaient commande dans les différents établissements où ils ont fait valoir un bon.
+L'attrait pour les établissements est double. Une telle application leur permettrait de se faire connaître par de nouveaux clients mais aurait également un intérêt financier direct. En effet, il a été prouvé que les clients consommaient davantage après avoir utilisé leur bon (dans les bars) ou passaient commande (dans les brasseries) dans les différents établissements où ils ont fait valoir un bon.
 
 ## Technologies utilisées:
 
@@ -18,7 +18,7 @@ Pour ce projet, nous avons utilisé:
 
 - Scala pour écrire le Backend (une API REST).
 - Slick pour faire le lien entre la base de données et le backend.
-- React Native et Expo pour créer le Frontend (une application smartphone), qui permet:
+- React Native et Expo pour créer l'application smartphone, qui permet:
   - Pour les utilisateurs : 
     - De consulter les bons disponibles
     - De consulter les bons utilisés
@@ -153,11 +153,11 @@ En plus de l'application mobile, nous avons implémenté un front end Web en uti
 
 ##### Pages 
 
-La page d'accueil présente le concept du Bier Pass et affiche le nombre d'établissements partenaires ainsi que le nombre de bières différentes que l'utilisateur pourrait tester. Cette page d'accueil contient aussi des statistiques pour connaître l'établissement qui a le plus de succès ainsi que la bière qui a été choisie par le plus d'utilisateurs.
+La page d'accueil présente le concept du Beer Pass et affiche le nombre d'établissements partenaires ainsi que le nombre de bières différentes que l'utilisateur pourrait tester. Cette page d'accueil contient aussi des statistiques pour connaître l'établissement qui a le plus de succès ainsi que la bière qui a été choisie par le plus d'utilisateurs.
 
 La page des établissements offre une carte affichant tous les emplacements des établissements partenaires. En cliquant sur un marqueur, cela affiche une pop-up contenant le nom de l'établissement. L'utilisateur peut ensuite cliquer sur ce nom afin d'afficher les détails de l'établissement.
 
-La page de détail des établissements permet de consulter toutes les informations relatives à un établissement choisi, tels que sa decription, son adresse, les bières qu'il propose, ses horaires ainsi que sa position sur une carte.
+La page de détail des établissements permet de consulter toutes les informations relatives à un établissement choisi, tels que sa description, son adresse, les bières qu'il propose, ses horaires ainsi que sa position sur une carte.
 
 La page de shopping permettra par la suite de se procurer un Beer Pass. Malheureusement, à l'heure actuelle il n'est pas encore possible de s'en procurer un mais cela ne devrait plus tarder, restez informez ! Cela explique que le bouton d'ajout au panier soit désactivé.
 
@@ -187,7 +187,7 @@ Par la suite, nous avons rencontré des difficultés à faire fonctionner les En
 
 Finalement, et c'est sans doute ce qui a terminé de nous dégouter de Slick, il s'est avéré impossible d'ajouter des données dans une table ne possédant pas de champ en AutoInc! Or, selon notre modélisation, la table *LINK_DAILY_SCHEDULE_COMPANY* devrait posséder deux clés primaires (CompanyId et dailyScheduleId) qui sont également deux foreignKeys. Elle ne devrait pas posséder de champ en AutoInc! Mais comme nous n'avons pas pu trouver d'exemples fonctionnels sur internet et ne sommes pas parvenu à régler ce problème, nous avons été obligés d'ajouter une clé primaire *id* en autoInc afin que Slick soit heureux. Ce champ est donc enregistré dans notre base de données alors qu'il nous sert en réalité à rien du tout!
 
-Au niveau de l'application mobile et du front end Web, aucun souci particulier n'est à signaler. Le seul problème rencontré a été le manque de temps dû aux autres cours et travail de Bachelor. Ceci explique le fait que ces deux applications sont très simplistes et n'implémentent pas toutes les possibilités offertent par le back end (voir améliorations possibles).
+Au niveau de l'application mobile et du front end Web, aucun souci particulier n'est à signaler. Le seul problème rencontré a été le manque de temps dû aux autres cours et travail de Bachelor. Ceci explique le fait que ces deux applications sont très simplistes et n'implémentent pas toutes les possibilités offertes par le back end (voir améliorations possibles).
 
  
 
