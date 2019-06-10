@@ -20,7 +20,7 @@ export default function QRCodeGenerator(props) {
       <QRCode
         value={qrValue}
         logo={logoFromFile}
-        logoSize={30}
+        logoSize={50}
         size={size}
       />
     </View>

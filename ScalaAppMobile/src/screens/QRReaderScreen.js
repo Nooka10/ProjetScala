@@ -1,13 +1,14 @@
 
 import React, { Component } from 'react';
 import {
-  Modal, TouchableHighlight, Text, View, AsyncStorage, StyleSheet, TouchableOpacity, ScrollView, Alert
+  Modal, TouchableHighlight, Text, View, AsyncStorage, StyleSheet, TouchableOpacity, ScrollView, Alert, Image
 } from 'react-native';
 import { BarCodeScanner, Permissions, Svg } from 'expo';
 import AnimatedLoader from 'react-native-animated-loader';
 import { AntDesign } from '@expo/vector-icons';
 import Layout from '../constants/Layout';
 import FetchBackend from '../api/FetchBackend';
+import Colors from '../constants/Colors';
 
 export default class QRReader extends Component {
   static navigationOptions = {
@@ -38,11 +39,15 @@ export default class QRReader extends Component {
   handleBarCodeRead = (result) => {
     const { companyId } = this.state;
     const resultJson = JSON.parse(result.data);
+    this.setState({
+      qrCodeScanned: true,
+    });
     if (resultJson.company === companyId) {
       this.setState({
         userId: resultJson.user,
       });
     } else {
+      this.setState({ hasCameraPermission: false });
       Alert.alert(
         'Erreur',
         'Ce bon ne correspond pas au bar',
@@ -51,6 +56,7 @@ export default class QRReader extends Component {
             text: 'OK',
             onPress: () => this.setState({
               qrCodeScanned: false,
+              hasCameraPermission: true,
             })
           },
         ],
@@ -60,24 +66,45 @@ export default class QRReader extends Component {
   };
 
   fetchBeers = async () => {
+    const { navigation } = this.props;
     this.setState({ loading: true });
-    const companyId = await AsyncStorage.getItem('companyId');
-    this.setState({ companyId });
-    const result = await FetchBackend.fetchBeersForCompany(companyId);
-    this.setState({ beers: result, loading: false });
+    const companyId = parseInt(await AsyncStorage.getItem('companyId'), 10);
+    if (companyId) {
+      this.setState({ companyId });
+      const result = await FetchBackend.fetchBeersForCompany(companyId);
+      this.setState({ beers: result, loading: false });
+    } else {
+      navigation.navigate('Auth');
+    }
   }
 
   beerSelection = async (beerId) => {
     const { userId, companyId } = this.state;
 
     this.setState({ loading: true });
+
     const result = await FetchBackend.useOffer(userId, companyId, beerId);
-    console.log(result);
 
     this.setState({ loading: false });
 
+    console.log(result);
     // TODO
-    if (result) {
+    if (result.status === 'Not Found or already used') {
+      Alert.alert(
+        'Pas valable',
+        'Ce bon a déjà été utilisé ou n\'a pas été trouvé',
+        [
+          {
+            text: 'OK',
+            onPress: () => this.setState({
+              qrCodeScanned: false,
+              userId: null,
+            })
+          },
+        ],
+        { cancelable: false },
+      );
+    } else if (result.beerId === beerId && result.clientId === userId && result.companyId === companyId) {
       Alert.alert(
         'Validé',
         'Le bon a été validé',
@@ -94,8 +121,8 @@ export default class QRReader extends Component {
       );
     } else {
       Alert.alert(
-        'Pas valable',
-        'Ce bon a déjà été utilisé',
+        'Erreur',
+        'Erreur avec la base de donnée',
         [
           {
             text: 'OK',
@@ -188,13 +215,22 @@ export default class QRReader extends Component {
                     </TouchableHighlight>
 
                     <ScrollView>
+                      <Text style={styles.beerTitle}>Sélectionnez la bière commandée</Text>
+
                       {beers.map(beer => (
                         <TouchableOpacity
                           key={beer.id}
                           onPress={() => this.beerSelection(beer.id)}
                         >
-                          <View style={{ height: 50 }}>
+
+                          <View key={beer.id + beer.brand} style={styles.beerView}>
+                            <Image
+                              style={{ width: 50, height: 50 }}
+                              source={{ uri: beer.image }}
+                            />
+                            <Text>{beer.name}</Text>
                             <Text>{beer.brand}</Text>
+                            <Text>{`${beer.degreeAlcohol}%`}</Text>
                           </View>
                         </TouchableOpacity>
 
@@ -263,4 +299,17 @@ const styles = StyleSheet.create({
     fontSize: 25,
     fontWeight: 'bold',
   },
+  beerView: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+  beerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: Colors.tintColor,
+    marginTop: 20,
+    marginBottom: 20,
+  }
 });
