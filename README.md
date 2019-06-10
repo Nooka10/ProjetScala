@@ -1,3 +1,5 @@
+![BeerPassLogo2](assets\BeerPassLogo2.png)
+
 # Rapport projet Scala - BeerPass:
 
 Membres du groupe: Antoine Rochat et Benoît Schopfer
@@ -6,7 +8,7 @@ URL du repo Github: https://github.com/Nooka10/ProjetScala
 
 URL de l'API Rest: https://beerpass-scala.herokuapp.com
 
-URL du frontend web: https://beerpass-scala-front.herokuapp.com (notez le loading incroyable réalisé par Antoine! :D)
+URL du frontend web: https://beerpass-scala-front.herokuapp.com
 
 ## Description du projet:
 

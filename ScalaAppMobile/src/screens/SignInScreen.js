@@ -6,14 +6,13 @@ import {
   StyleSheet,
   Button
 } from 'react-native';
-import Loader from '../components/Loader'
+import AnimatedLoader from 'react-native-animated-loader';
+import FetchBackend from '../api/FetchBackend';
 
 export default class SignInScreen extends React.Component {
   static navigationOptions = {
     title: 'Connexion',
   };
-
-
 
   constructor(props) {
     super(props);
@@ -32,73 +31,62 @@ export default class SignInScreen extends React.Component {
     this.setState({ password: value });
   }
 
-  
+  signInAsync = async () => {
+    const { email, password } = this.state;
+    const { navigation } = this.props;
+    this.setState({ loading: true });
+    const result = await FetchBackend.login(email, password);
+    if (result.status === 'OK') {
+      await AsyncStorage.setItem('token', result.token);
+      await AsyncStorage.setItem('firstname', result.userInfos.firstname);
+      await AsyncStorage.setItem('lastname', result.userInfos.lastname);
+      await AsyncStorage.setItem('id', result.userInfos.id.toString());
+
+      const { userType } = result.userInfos;
+      await AsyncStorage.setItem('userType', userType);
+      if (userType === 'EMPLOYEE') {
+        await AsyncStorage.setItem('companyId', result.userInfos.companyId.toString());
+      }
+      this.setState({ loading: false });
+      navigation.navigate(userType === 'CLIENT' ? 'AppClient' : 'AppBarman');
+    }
+  };
+
   render() {
-    const { loading } = this.state;
+    const { loading, email, password } = this.state;
     return (
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
-        <Loader visible={loading}/>
-        <TextInput
-          style={styles.input}
-          placeholder='Email'
-          placeholderTextColor="grey"
-          onChangeText={this.onChangeEmail}
-          value={this.state.email}
+        <AnimatedLoader
+          visible={loading}
+          overlayColor="rgba(255,255,255,0.75)"
+          source={require('../assets/loader/loader.json')}
+          animationStyle={styles.lottie}
+          speed={1}
         />
 
         <TextInput
           style={styles.input}
-          placeholder='Mot de passe'
+          placeholder="Email"
+          placeholderTextColor="grey"
+          onChangeText={this.onChangeEmail}
+          value={email}
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Mot de passe"
           placeholderTextColor="grey"
           onChangeText={this.onChangePassword}
-          value={this.state.password}
+          value={password}
           secureTextEntry
         />
 
-        <Button title="Login" onPress={this._signInAsync} />
+        <Button title="Login" onPress={this.signInAsync} />
 
       </KeyboardAvoidingView>
     );
   }
-
-  _signInAsync = async () => {
-    this.setState({ loading: true });
-    fetch('https://beerpass-scala.herokuapp.com/login', {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: this.state.email,
-        password: this.state.password,
-      }),
-    }).then(result => (result.json()))
-      .then(async (responseJson) => {
-        if (responseJson.status === 'OK') {
-          console.log(responseJson)
-          await AsyncStorage.setItem('token', responseJson.token);
-          await AsyncStorage.setItem('firstname', responseJson.userInfos.firstname);
-          await AsyncStorage.setItem('lastname', responseJson.userInfos.lastname);
-          await AsyncStorage.setItem('id', responseJson.userInfos.id.toString());
-          
-          const { userType } = responseJson.userInfos;
-          await AsyncStorage.setItem('userType', userType);
-          if (userType === 'EMPLOYEE') {
-            await AsyncStorage.setItem('companyId', responseJson.userInfos.companyId.toString());
-          }
-          this.setState({ loading: false });
-          this.props.navigation.navigate(userType === 'CLIENT' ? 'AppClient' : 'AppBarman');
-        }
-      })
-      .catch((error) => {
-        console.error(error);
-        this.setState({ loading: false });
-
-      });;
-  };
 }
-
 
 const styles = StyleSheet.create({
   input: {
@@ -109,4 +97,8 @@ const styles = StyleSheet.create({
     paddingLeft: 45,
     borderRadius: 20,
   },
+  lottie: {
+    width: 200,
+    height: 200
+  }
 });

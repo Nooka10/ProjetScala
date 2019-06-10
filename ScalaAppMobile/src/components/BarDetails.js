@@ -2,14 +2,14 @@ import React, { Component } from 'react';
 import {
   View, Text, Image, ScrollView, StyleSheet, TouchableOpacity
 } from 'react-native';
+import { MapView } from 'expo';
+import AnimatedLoader from 'react-native-animated-loader';
 import QRCodeGenerator from './QRCodeGenerator';
 import Layout from '../constants/Layout';
 import DaySchedule from './DaySchedule';
-import Loader from './Loader';
-import { MapView } from 'expo';
+import FetchBackend from '../api/FetchBackend';
 
 export default class BarDetails extends Component {
-
   state = {
     companyDetails: null,
     beers: [],
@@ -21,82 +21,60 @@ export default class BarDetails extends Component {
   }
 
   fetchDatas = async () => {
-    const { onLoadingBegin, onLoadingEnd } = this.props;
-
-    onLoadingBegin();
-    Promise.all([onLoadingBegin(), this.fetchCompanyDetails(), this.fetchBeers(), fetchMostFamousBeer(), waitingForAnimation])
+    this.setState({ loading: true });
+    Promise.all([this.fetchCompanyDetails(), this.fetchBeers()])
       .then(() => {
-        onLoadingEnd();
+        this.setState({ loading: false });
       });
   }
 
   fetchCompanyDetails = async () => {
     const { data } = this.props;
-
-    fetch(`https://beerpass-scala.herokuapp.com/companies/${data.company.id}`)
-      .then(response => response.json())
-      .then(async (responseJson) => {
-        this.setState({ companyDetails: responseJson })
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-
+    const result = await FetchBackend.fetchCompanyDetails(data.company.id);
+    this.setState({ companyDetails: result });
   }
 
   fetchBeers = async () => {
     const { data } = this.props;
-
-    fetch(`https://beerpass-scala.herokuapp.com/companies/${data.company.id}/beers`)
-      .then(response => response.json())
-      .then(async (responseJson) => {
-        this.setState({ beers: responseJson })
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-
+    const result = await FetchBackend.fetchBeersForCompany(data.company.id);
+    this.setState({ beers: result });
   }
-
-
-
-
 
   render() {
     const { data, setQRDialogVisible } = this.props;
-    const { loading, companyDetails } = this.state;
+    const { loading, companyDetails, beers } = this.state;
     return (
-
-
       <ScrollView style={styles.scrollviewBarDetails}>
+        <AnimatedLoader
+          visible={loading}
+          overlayColor="rgba(255,255,255,0.75)"
+          source={require('../assets/loader/loader.json')}
+          animationStyle={styles.lottie}
+          speed={1}
+        />
+
         <View>
           <Image
             style={{ width: '100%', height: 200 }}
             source={{ uri: data.company.image }}
           />
           <Text style={styles.titleText}>{data.company.name}</Text>
-
           <Text>{data.company.description}</Text>
 
           <Text style={styles.titleText}>Bières</Text>
-          {this.state.beers.map(beer => <Text key={beer.id + beer.brand}>{beer.brand}</Text>)}
+          {beers.map(beer => <Text key={beer.id + beer.brand}>{beer.brand}</Text>)}
 
-          {this.state.companyDetails && (
+          {companyDetails && (
             <View>
               <Text style={styles.titleText}>Horaires</Text>
-              {this.state.companyDetails.schedules.map(schedule => {
-                console.log(schedule, schedule.day)
-
-                return (<DaySchedule key={schedule.id + schedule.day} schedule={schedule} />)
-              })}
+              {companyDetails.schedules.map(schedule => (<DaySchedule key={schedule.id + schedule.day} schedule={schedule} />))}
 
               <Text style={styles.titleText}>Adresse</Text>
 
-              <Text >{`${companyDetails.address.road} ${companyDetails.address.no}`}</Text>
-              <Text >{`${companyDetails.address.postalCode} ${companyDetails.address.city}`}</Text>
-              <Text >{companyDetails.address.country}</Text>
+              <Text>{`${companyDetails.address.road} ${companyDetails.address.no}`}</Text>
+              <Text>{`${companyDetails.address.postalCode} ${companyDetails.address.city}`}</Text>
+              <Text>{companyDetails.address.country}</Text>
 
-              {console.log(this.state.companyDetails.address)}
               <MapView
                 style={{ height: 200 }}
                 provider={MapView.PROVIDER_GOOGLE}
@@ -120,9 +98,8 @@ export default class BarDetails extends Component {
           )}
 
 
-
           <View style={{ marginTop: 20, marginBottom: 50 }}>
-            <TouchableOpacity onPress={(e) => setQRDialogVisible(e)}>
+            <TouchableOpacity onPress={e => setQRDialogVisible(e)}>
               <QRCodeGenerator size={Layout.window.width * 0.5} data={data} />
             </TouchableOpacity>
           </View>
@@ -156,7 +133,9 @@ const styles = StyleSheet.create({
   scrollviewBarDetails: {
     marginLeft: 10,
     marginRight: 10,
+  },
+  lottie: {
+    width: 200,
+    height: 200
   }
 });
-
-

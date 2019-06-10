@@ -1,5 +1,5 @@
 
-import React, { Component } from 'react';
+import React from 'react';
 import QRCode from 'react-native-qrcode-svg';
 
 import {
@@ -7,30 +7,24 @@ import {
   View,
 } from 'react-native';
 
-export default class QRCodeGenerator extends Component {
+export default function QRCodeGenerator(props) {
+  const { size, data } = props;
+  const logoFromFile = require('../assets/images/BeerPassLogo4.png');
+  const qrValue = JSON.stringify({
+    company: data.company.id,
+    user: data.user.id,
+  });
 
-  render() {
-    const { size, data } = this.props;
-    let logoFromFile = require('../assets/images/BeerPassLogo4.png');
-    const qrValue = JSON.stringify({
-      company: data.company.id,
-      user: data.user.id,
-    })
-
-    return (
-
-      <View style={styles.container}>
-        <QRCode
-          value={qrValue}
-          logo={logoFromFile}
-          logoSize={30}
-          size={size}
-        />
-      </View>
-
-
-    );
-  };
+  return (
+    <View style={styles.container}>
+      <QRCode
+        value={qrValue}
+        logo={logoFromFile}
+        logoSize={30}
+        size={size}
+      />
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({

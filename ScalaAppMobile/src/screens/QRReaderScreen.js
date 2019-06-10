@@ -1,38 +1,34 @@
 
 import React, { Component } from 'react';
-import { Alert, Modal, Dimensions, TouchableHighlight, Text, View, AsyncStorage, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  Modal, TouchableHighlight, Text, View, AsyncStorage, StyleSheet, TouchableOpacity, ScrollView, Alert
+} from 'react-native';
 import { BarCodeScanner, Permissions, Svg } from 'expo';
+import AnimatedLoader from 'react-native-animated-loader';
 import { AntDesign } from '@expo/vector-icons';
-import { ScrollView } from 'react-native-gesture-handler';
-import Layout from '../constants/Layout'
+import Layout from '../constants/Layout';
+import FetchBackend from '../api/FetchBackend';
 
-// TODO : charger les biere grace a userInfos.companyId puis vérifier si companie de qr code correspknd
 export default class QRReader extends Component {
-
-  constructor(props) {
-    super(props);
-
-  }
-  state = {
-    hasCameraPermission: null,
-    barCorrespondance: false,
-    qrCodeScanned: false,
-    beerSelected: false,
-    companyId: null,
-    userId: null,
-    beerId: null,
-    beers: []
-  };
-
   static navigationOptions = {
     header: null,
   };
+
+  state = {
+    hasCameraPermission: null,
+    qrCodeScanned: false,
+    companyId: null,
+    userId: null,
+    loading: false,
+    beers: []
+  };
+
   componentDidMount() {
-    this._requestCameraPermission();
+    this.requestCameraPermission();
     this.fetchBeers();
   }
 
-  _requestCameraPermission = async () => {
+  requestCameraPermission = async () => {
     const { status } = await Permissions.askAsync(Permissions.CAMERA);
     this.setState({
       hasCameraPermission: status === 'granted',
@@ -40,101 +36,119 @@ export default class QRReader extends Component {
   };
 
   handleBarCodeRead = (result) => {
+    const { companyId } = this.state;
     const resultJson = JSON.parse(result.data);
-    if (resultJson.company === this.state.companyId) {
+    if (resultJson.company === companyId) {
       this.setState({
         userId: resultJson.user,
-        barCorrespondance: true
       });
     } else {
-      this.setState({
-        qrCodeScanned: true,
-        barCorrespondance: false
-      });
+      Alert.alert(
+        'Erreur',
+        'Ce bon ne correspond pas au bar',
+        [
+          {
+            text: 'OK',
+            onPress: () => this.setState({
+              qrCodeScanned: false,
+            })
+          },
+        ],
+        { cancelable: false },
+      );
     }
-
   };
 
   fetchBeers = async () => {
+    this.setState({ loading: true });
     const companyId = await AsyncStorage.getItem('companyId');
-
-    this.setState({ companyId })
-    fetch(`https://beerpass-scala.herokuapp.com/companies/${companyId}/beers`)
-      .then(response => response.json())
-      .then(async (responseJson) => {
-        this.setState({ beers: responseJson })
-      })
-      .catch((error) => {
-        console.error(error);
-      });;
-
+    this.setState({ companyId });
+    const result = await FetchBackend.fetchBeersForCompany(companyId);
+    this.setState({ beers: result, loading: false });
   }
 
-  beerSelection = id => {
-    this.setState({ beerId: id, beerSelected: true })
+  beerSelection = async (beerId) => {
+    const { userId, companyId } = this.state;
 
-    fetch('https://beerpass-scala.herokuapp.com/useOffer', {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        clientId: this.state.userId,
-        companyId: this.state.companyId,
-        beerId: id
-      }),
-    }).then(result => (result.json()))
-      .then(async (responseJson) => {
-        console.log(responseJson)
-        //Object {
-        // "beerId": 2,
-        // "clientId": 2,
-        //"companyId": 1,
-        //}
-      })
-      .catch((error) => {
-        console.error(error);
-      });;
+    this.setState({ loading: true });
+    const result = await FetchBackend.useOffer(userId, companyId, beerId);
+    console.log(result);
 
-    this.setState({
-      qrCodeScanned: false,
-      beerSelected: false,
-      companyId: null,
-      userId: null,
-      beerId: null,
-    })
+    this.setState({ loading: false });
 
+    // TODO
+    if (result) {
+      Alert.alert(
+        'Validé',
+        'Le bon a été validé',
+        [
+          {
+            text: 'OK',
+            onPress: () => this.setState({
+              qrCodeScanned: false,
+              userId: null,
+            })
+          },
+        ],
+        { cancelable: false },
+      );
+    } else {
+      Alert.alert(
+        'Pas valable',
+        'Ce bon a déjà été utilisé',
+        [
+          {
+            text: 'OK',
+            onPress: () => this.setState({
+              qrCodeScanned: false,
+              userId: null,
+            })
+          },
+        ],
+        { cancelable: false },
+      );
+    }
   }
 
-  setModalVisible = e => {
+  setModalVisible = (e) => {
     e.preventDefault();
     this.setState({ qrCodeScanned: true });
   }
 
-  setModalInvisible = e => {
+  setModalInvisible = (e) => {
     e.preventDefault();
     this.setState({ qrCodeScanned: false });
   }
 
   render() {
+    const {
+      hasCameraPermission, qrCodeScanned, loading, beers
+    } = this.state;
+
     return (
       <View style={styles.container}>
-
-        {this.state.hasCameraPermission === null
+        <AnimatedLoader
+          visible={loading}
+          overlayColor="rgba(255,255,255,0.75)"
+          source={require('../assets/loader/loader.json')}
+          animationStyle={styles.lottie}
+          speed={1}
+        />
+        {hasCameraPermission === null
           ? <Text>Requesting for camera permission</Text>
-          : this.state.hasCameraPermission === false
-            ? <Text style={{ color: '#fff' }}>
-              Camera permission is not granted
-                </Text>
-            :
-            (
+          : hasCameraPermission === false
+            ? (
+              <Text style={{ color: '#fff' }}>
+                Camera permission is not granted
+              </Text>
+            )
+            : (
               <View style={{ flex: 1 }}>
                 <BarCodeScanner
                   onBarCodeRead={this.handleBarCodeRead}
                   style={{
-                    height: Dimensions.get('window').height,
-                    width: Dimensions.get('window').width,
+                    height: Layout.window.height,
+                    width: Layout.window.width,
                   }}
                 />
                 <View style={styles.scannerView}>
@@ -147,7 +161,7 @@ export default class QRReader extends Component {
                       width={Layout.window.width * 0.8}
                       height={Layout.window.width * 0.8}
                       strokeWidth={3}
-                      stroke="#F4C44E" // todo
+                      stroke="#F4C44E"
                       fill="none"
                     />
                   </Svg>
@@ -155,12 +169,13 @@ export default class QRReader extends Component {
                 <Modal
                   animationType="slide"
                   transparent={false}
-                  visible={this.state.qrCodeScanned}
+                  visible={qrCodeScanned}
                   onRequestClose={this.setModalInvisible}
                 >
                   <View style={{ marginTop: 12 }}>
                     <TouchableHighlight
-                      onPress={this.setModalInvisible}>
+                      onPress={this.setModalInvisible}
+                    >
                       <View style={{ flexDirection: 'row' }}>
                         <AntDesign
                           name="close"
@@ -171,40 +186,22 @@ export default class QRReader extends Component {
                         <Text style={styles.closeText}>Annuler</Text>
                       </View>
                     </TouchableHighlight>
-                    {this.state.barCorrespondance ? (
-                      this.state.beerSelected ? (
 
-                        <View>
-                          <Text>Bon validé</Text>
-                        </View>
-                      )
-                        : (
+                    <ScrollView>
+                      {beers.map(beer => (
+                        <TouchableOpacity
+                          key={beer.id}
+                          onPress={() => this.beerSelection(beer.id)}
+                        >
+                          <View style={{ height: 50 }}>
+                            <Text>{beer.brand}</Text>
+                          </View>
+                        </TouchableOpacity>
 
-                          <ScrollView>
-                            {this.state.beers.map(beer =>
-                              (
-                                <TouchableOpacity
-                                  key={beer.id}
-                                  onPress={() => this.beerSelection(beer.id)}>
-
-                                  <View style={{ height: 50 }}>
-                                    <Text>{beer.brand}</Text>
-                                  </View>
-
-                                </TouchableOpacity>
-
-                              ))}
-                          </ScrollView>
-                        )
-                    ) :
-                      (<Text>Le bon ne correspond pas au bar</Text>)
-                    }
-
+                      ))}
+                    </ScrollView>
                   </View>
-
                 </Modal>
-
-
               </View>
             )
         }
@@ -257,11 +254,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     justifyContent: 'center',
     alignItems: 'center',
-    top: 0, left: 0, right: 0, bottom: 0,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   closeText: {
     fontSize: 25,
     fontWeight: 'bold',
   },
 });
-

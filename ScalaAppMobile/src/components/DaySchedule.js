@@ -1,5 +1,5 @@
-import React, { Component } from 'react';
-import { View, Text, Image, ScrollView, StyleSheet, Modal, TouchableHighlight, TouchableOpacity } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 
 const dayTranslation = {
   MONDAY: 'Lundi',
@@ -9,28 +9,25 @@ const dayTranslation = {
   FRIDAY: 'Vendredi',
   SATURDAY: 'Samedi',
   SUNDAY: 'Dimanche',
-}
+};
 
-export default class DaySchedule extends Component {
+export default function DaySchedule(props) {
+  const { schedule } = props;
 
-  render() {
-    const { schedule } = this.props;
-
-    return (
-
-      <View style={styles.scheduleView}>
-        <Text style={styles.scheduleDay}>{dayTranslation[schedule.day]}</Text>
-        <Text style={styles.scheduleHours}>{schedule.hOpenAM} - </Text>
-        {schedule.hCloseAM ? (
+  return (
+    <View style={styles.scheduleView}>
+      <Text style={styles.scheduleDay}>{dayTranslation[schedule.day]}</Text>
+      <Text style={styles.scheduleHours}>{`${schedule.hOpenAM} - `}</Text>
+      {schedule.hCloseAM
+        ? (
           <View style={styles.scheduleView}>
             <Text>{schedule.hCloseAM}</Text>
-            <Text style={styles.scheduleHours}>{schedule.hOpenPM} - {schedule.hClosePM}</Text>
-          </View>)
-          : (<Text>{schedule.hClosePM}</Text>)}
-      </View>
-
-    );
-  }
+            <Text style={styles.scheduleHours}>{`${schedule.hOpenPM} - ${schedule.hClosePM}`}</Text>
+          </View>
+        )
+        : (<Text>{schedule.hClosePM}</Text>)}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({

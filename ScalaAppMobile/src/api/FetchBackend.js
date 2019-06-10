@@ -1,8 +1,8 @@
 const baseUrl = 'https://beerpass-scala.herokuapp.com';
 
-const fetchBackend = async (url) => {
+const fetchBackend = async (url, options) => {
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, options);
     const responseJson = await response.json();
     return responseJson;
   } catch (err) {
@@ -27,6 +27,30 @@ const fetchMostFamousBeer = async () => fetchBackend(`${baseUrl}/stats/getMostFa
 
 const fetchBeersForCompany = async companyId => fetchBackend(`${baseUrl}/companies/${companyId}/beers`);
 
+const login = async (email, password,) => fetchBackend(`${baseUrl}/login`, {
+  method: 'POST',
+  headers: {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    email,
+    password,
+  }),
+});
+
+const useOffer = async (clientId, companyId, beerId) => fetchBackend(`${baseUrl}/useOffer`, {
+  method: 'POST',
+  headers: {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    clientId,
+    companyId,
+    beerId
+  }),
+});
 
 export default {
   fetchAllCompanies,
@@ -37,4 +61,6 @@ export default {
   fetchMostPopularCompany,
   fetchMostFamousBeer,
   fetchBeersForCompany,
+  login,
+  useOffer
 };
