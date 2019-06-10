@@ -4,7 +4,9 @@ import {
   KeyboardAvoidingView,
   TextInput,
   StyleSheet,
-  Button
+  Button,
+  Image,
+  Alert
 } from 'react-native';
 import AnimatedLoader from 'react-native-animated-loader';
 import FetchBackend from '../api/FetchBackend';
@@ -17,7 +19,7 @@ export default class SignInScreen extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      email: 'tonio@boiiiire.ch',
+      email: 'user1@beerpass.ch',
       password: '1234abcd',
       loading: false,
     };
@@ -40,6 +42,7 @@ export default class SignInScreen extends React.Component {
       await AsyncStorage.setItem('token', result.token);
       await AsyncStorage.setItem('firstname', result.userInfos.firstname);
       await AsyncStorage.setItem('lastname', result.userInfos.lastname);
+      await AsyncStorage.setItem('email', result.userInfos.email);
       await AsyncStorage.setItem('id', result.userInfos.id.toString());
 
       const { userType } = result.userInfos;
@@ -49,13 +52,23 @@ export default class SignInScreen extends React.Component {
       }
       this.setState({ loading: false });
       navigation.navigate(userType === 'CLIENT' ? 'AppClient' : 'AppBarman');
+    } else {
+      this.setState({ loading: false });
+      Alert.alert(
+        'Erreur',
+        'Identifiants incorrects',
+        [
+          { text: 'OK', onPress: () => { } },
+        ],
+        { cancelable: false },
+      );
     }
   };
 
   render() {
     const { loading, email, password } = this.state;
     return (
-      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior="padding" style={styles.container} enabled>
         <AnimatedLoader
           visible={loading}
           overlayColor="rgba(255,255,255,0.75)"
@@ -64,6 +77,10 @@ export default class SignInScreen extends React.Component {
           speed={1}
         />
 
+        <Image
+          source={require('../assets/images/BeerPassLogo4.png')}
+          style={styles.imageLogo}
+        />
         <TextInput
           style={styles.input}
           placeholder="Email"
@@ -89,12 +106,21 @@ export default class SignInScreen extends React.Component {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: 'center'
+  },
+  imageLogo: {
+    height: 100,
+    width: 100,
+  },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    backgroundColor: 'rgba(254, 198, 82, 0.4)',
     width: 300,
     height: 40,
     marginHorizontal: 20,
     paddingLeft: 45,
+    marginBottom: 30,
     borderRadius: 20,
   },
   lottie: {

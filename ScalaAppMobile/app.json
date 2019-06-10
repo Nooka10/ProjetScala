@@ -23,7 +23,11 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+	  "config": {
+		"googleMapsApiKey": "AIzaSyCLKykfwiCpu5WcuUqBAvVi-_kLzAn3fr0"
+      },
+	  "bundleIdentifier": "com.rochatschopfer.beerpass"
     },
 	"android": {
       "package": "com.rochatschopfer.beerpass",

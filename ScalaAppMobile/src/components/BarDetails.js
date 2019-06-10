@@ -8,6 +8,7 @@ import QRCodeGenerator from './QRCodeGenerator';
 import Layout from '../constants/Layout';
 import DaySchedule from './DaySchedule';
 import FetchBackend from '../api/FetchBackend';
+import Colors from '../constants/Colors';
 
 export default class BarDetails extends Component {
   state = {
@@ -62,7 +63,17 @@ export default class BarDetails extends Component {
           <Text>{data.company.description}</Text>
 
           <Text style={styles.titleText}>Bières</Text>
-          {beers.map(beer => <Text key={beer.id + beer.brand}>{beer.brand}</Text>)}
+          {beers.map(beer => (
+            <View key={beer.id + beer.brand} style={styles.beerView}>
+              <Image
+                style={{ width: 50, height: 50 }}
+                source={{ uri: beer.image }}
+              />
+              <Text>{beer.name}</Text>
+              <Text>{beer.brand}</Text>
+              <Text>{`${beer.degreeAlcohol}%`}</Text>
+            </View>
+          ))}
 
           {companyDetails && (
             <View>
@@ -76,7 +87,7 @@ export default class BarDetails extends Component {
               <Text>{companyDetails.address.country}</Text>
 
               <MapView
-                style={{ height: 200 }}
+                style={{ height: 200, marginTop: 10 }}
                 provider={MapView.PROVIDER_GOOGLE}
                 initialRegion={{
                   latitude: companyDetails.address.lat,
@@ -93,12 +104,9 @@ export default class BarDetails extends Component {
                   title={data.company.name}
                 />
               </MapView>
-
             </View>
           )}
-
-
-          <View style={{ marginTop: 20, marginBottom: 50 }}>
+          <View style={{ marginTop: 20, marginBottom: 100 }}>
             <TouchableOpacity onPress={e => setQRDialogVisible(e)}>
               <QRCodeGenerator size={Layout.window.width * 0.5} data={data} />
             </TouchableOpacity>
@@ -116,8 +124,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Cochin',
   },
   titleText: {
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: 'bold',
+    marginTop: 20,
+    color: Colors.tintColor,
   },
   closeText: {
     fontSize: 25,
@@ -137,5 +147,11 @@ const styles = StyleSheet.create({
   lottie: {
     width: 200,
     height: 200
+  },
+  beerView: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
   }
 });
