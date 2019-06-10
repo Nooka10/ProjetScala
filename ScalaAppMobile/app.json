@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "BierPass",
+    "name": "Beer Pass",
     "slug": "ScalaApp",
     "privacy": "public",
     "sdkVersion": "32.0.0",
@@ -10,9 +10,9 @@
     ],
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/pint.png",
+    "icon": "./src/assets/images/BeerPassLogo4.png",
     "splash": {
-      "image": "./assets/images/pint.png",
+      "image": "./src/assets/images/BeerPassLogo4.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -26,7 +26,7 @@
       "supportsTablet": true
     },
 	"android": {
-      "package": "com.rochatschopfer.bierpass",
+      "package": "com.rochatschopfer.beerpass",
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyBwFuugRh4Xob62d6NNgYBr9iMdawbwFug"
